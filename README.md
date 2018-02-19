@@ -50,7 +50,7 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 
 
 **Sampling**
-- Run `python main.py --cfg cfg/eval_bird.yml --gpu 1` to generate examples from captions from files listed in "./data/birds/example_filenames.txt".
+- Run `python main.py --cfg cfg/eval_bird.yml --gpu 1` to generate examples from captions in files listed in "./data/birds/example_filenames.txt". Results are saved to `DAMSMencoders/`. 
 - Change the `eval_*.yml` files to generate images from other pre-trained models. 
 
 
