@@ -1,15 +1,9 @@
-# StackGAN-v2
+# AttnGAN (TO Appear soon)
 
-- [StackGAN-v1: Tensorflow implementation](https://github.com/hanzhanggit/StackGAN)
+Pytorch implementation for reproducing AttnGAN results in the paper [AttnGAN: Fine-Grained Text to Image Generation
+with Attentional Generative Adversarial Networks](https://arxiv.org/pdf/1711.10485.pdf) by Tao Xu, Pengchuan Zhang, Qiuyuan Huang, Han Zhang, Zhe Gan, Xiaolei Huang, Xiaodong He. 
 
-- [StackGAN-v1: Pytorch implementation](https://github.com/hanzhanggit/StackGAN-Pytorch)
-
-- [Inception score evaluation](https://github.com/hanzhanggit/StackGAN-inception-model)
-
-
-Pytorch implementation for reproducing StackGAN_v2 results in the paper [StackGAN++: Realistic Image Synthesis with Stacked Generative Adversarial Networks](https://arxiv.org/abs/1710.10916) by Han Zhang*, Tao Xu*, Hongsheng Li, Shaoting Zhang, Xiaogang Wang,   Xiaolei Huang, Dimitris Metaxas.
-
-<img src="examples/framework.jpg" width="900px" height="350px"/>
+<img src="framework.jpg" width="900px" height="350px"/>
 
 
 
