@@ -1,0 +1,4 @@
+*.pyc
+*
+!README.md
+!.gitignore
