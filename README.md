@@ -23,7 +23,7 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 
 **Data**
 
-1. Download our preprocessed metadata for [birds](https://drive.google.com/open?id=17L19M4ZF6PIgpValds4sWHbQQbIf7eim) [coco](https://drive.google.com/open?id=10t9Inqe3Wle0hmTVzDOavTqRo0vGverk) and save them to `data/`
+1. Download our preprocessed metadata for [birds](https://drive.google.com/open?id=1O_LtUP9sch09QH3s_EBAgLEctBQ5JBSJ) [coco](https://drive.google.com/open?id=1rSnbIGNDGZeHlsUlLdahj0RJ9oo6lgH9) and save them to `data/`
 2. Download the [birds](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) image data. Extract them to `data/birds/`
 3. Download [coco](http://cocodataset.org/#download) dataset and extract the images to `data/coco/`
 
@@ -49,7 +49,7 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 - [AttnGAN for coco](https://drive.google.com/open?id=1i9Xkg9nU74RAvkcqKE-rJYhjvzKAMnCi). Download and save it to `models/`
 
 - [AttnDCGAN for bird](https://drive.google.com/open?id=19TG0JUoXurxsmZLaJ82Yo6O0UJ6aDBpg). Download and save it to `models/`
-  - This is an variant of AttnGAN which applied the propsoed attention mechanisms to DCGAN framework. 
+  - This is an variant of AttnGAN which applies the propsoed attention mechanisms to DCGAN framework. 
 
 **Sampling**
 - Run `python main.py --cfg cfg/eval_bird.yml --gpu 1` to generate examples from captions in files listed in "./data/birds/example_filenames.txt". Results are saved to `DAMSMencoders/`. 
@@ -85,3 +85,4 @@ If you find AttnGAN useful in your research, please consider citing:
 **Reference**
 
 - [StackGAN++: Realistic Image Synthesis with Stacked Generative Adversarial Networks](https://arxiv.org/abs/1710.10916) [[code]](https://github.com/hanzhanggit/StackGAN-v2)
+- [Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks(https://arxiv.org/abs/1511.06434) [[code]](https://github.com/carpedm20/DCGAN-tensorflow)
