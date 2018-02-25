@@ -17,6 +17,8 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 - `easydict`
 - `pandas`
 - `torchfile`
+- `nltk`
+- `skikit-image`
 
 
 
