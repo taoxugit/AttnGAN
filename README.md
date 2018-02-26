@@ -74,7 +74,7 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 If you find AttnGAN useful in your research, please consider citing:
 
 ```
-@article{Han17stackgan2,
+@article{Tao18attngan,
   author    = {Tao Xu, Pengchuan Zhang, Qiuyuan Huang, Han Zhang, Zhe Gan, Xiaolei Huang, Xiaodong He},
   title     = {AttnGAN: Fine-Grained Text to Image Generation with Attentional Generative Adversarial Networks},
   Year = {2018},
