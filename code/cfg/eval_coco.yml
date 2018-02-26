@@ -1,0 +1,30 @@
+CONFIG_NAME: 'attn2'
+
+DATASET_NAME: 'coco'
+DATA_DIR: '../data/coco'
+GPU_ID: 3
+WORKERS: 1
+
+B_VALIDATION: False
+TREE:
+    BRANCH_NUM: 3
+
+
+TRAIN:
+    FLAG: False
+    NET_G: '../models/coco_AttnGAN2.pth'
+    B_NET_D: False
+    BATCH_SIZE: 100
+    NET_E: '../DAMSMencoders/coco/text_encoder100.pth'
+
+
+GAN:
+    DF_DIM: 96
+    GF_DIM: 48
+    Z_DIM: 100
+    R_NUM: 3
+
+TEXT:
+    EMBEDDING_DIM: 256
+    CAPTIONS_PER_IMAGE: 5
+    WORDS_NUM: 20
