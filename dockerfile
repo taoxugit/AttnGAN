@@ -6,7 +6,8 @@ WORKDIR /usr/src/app
 COPY requirements.txt /usr/src/app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /usr/src/app
+RUN mkdir -p /usr/src/app/code
+COPY code /usr/src/app/code
 
 EXPOSE 8080
 
