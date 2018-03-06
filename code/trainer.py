@@ -24,6 +24,15 @@ import time
 import numpy as np
 import sys
 
+def info_caller():
+    # getting calling function
+    caller = inspect.stack()[1]
+    print(" - Using: %s" % caller.function)
+    args, _, _, values = inspect.getargvalues(caller[0])
+    for i in args:
+        o = str(values[i]).replace("\n", "            \n")
+        print ("      %s = %s" % (i, o))
+
 # ################# Text to image task############################ #
 class condGANTrainer(object):
     def __init__(self, output_dir, data_loader, n_words, ixtoword):
@@ -430,6 +439,7 @@ class condGANTrainer(object):
                         im.save(fullpath)
 
     def gen_example(self, data_dic):
+        info_caller()
         if cfg.TRAIN.NET_G == '':
             print('Error: the path for morels is not found!')
         else:
@@ -515,4 +525,3 @@ class condGANTrainer(object):
                                 im = Image.fromarray(img_set)
                                 fullpath = '%s_a%d.png' % (save_name, k)
                                 im.save(fullpath)
-                                
