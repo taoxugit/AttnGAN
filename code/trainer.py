@@ -28,7 +28,7 @@ import sys
 def info_caller():
     # getting calling function
     caller = inspect.stack()[1]
-    print(" - Using: %s" % caller.function)
+    print(" - Using: %s" % caller)
     args, _, _, values = inspect.getargvalues(caller[0])
     for i in args:
         o = str(values[i]).replace("\n", "            \n")
