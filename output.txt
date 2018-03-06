@@ -1,0 +1,107 @@
+
+C:\ML\AttnGAN>docker build -t "attngan" . 
+Sending build context to Docker daemon  338.2MB
+
+Step 1/16 : FROM python:2
+ ---> d8690ef56706
+Step 2/16 : RUN mkdir -p /usr/src/app
+ ---> Using cache
+ ---> 6b85bae484b9
+Step 3/16 : WORKDIR /usr/src/app
+ ---> Using cache
+ ---> 7fde3c51e5c9
+Step 4/16 : COPY requirements.txt /usr/src/app/
+ ---> Using cache
+ ---> d0c9c8130205
+Step 5/16 : RUN pip install --no-cache-dir -r requirements.txt
+ ---> Using cache
+ ---> 6692f1749331
+Step 6/16 : RUN mkdir -p /usr/src/app/code
+ ---> Using cache
+ ---> 35b673f157a3
+Step 7/16 : COPY code /usr/src/app/code
+ ---> Using cache
+ ---> 12e236b81dd9
+Step 8/16 : RUN mkdir -p /usr/src/app/DAMSMencoders
+ ---> Using cache
+ ---> b16fcac8e355
+Step 9/16 : COPY DAMSMencoders /usr/src/app/DAMSMencoders
+ ---> Using cache
+ ---> dee5898fa978
+Step 10/16 : RUN mkdir -p /usr/src/app/models
+ ---> Using cache
+ ---> 803a977d0dee
+Step 11/16 : COPY models /usr/src/app/models
+ ---> Using cache
+ ---> 1fe502916b37
+Step 12/16 : RUN mkdir -p /usr/src/app/data
+ ---> Using cache
+ ---> 228549e0ccaf
+Step 13/16 : COPY data /usr/src/app/data
+ ---> Using cache
+ ---> f223211307fa
+Step 14/16 : EXPOSE 8080
+ ---> Using cache
+ ---> 9d067f7b7a18
+Step 15/16 : RUN python code/main.py --cfg code/cfg/eval_bird.yml
+ ---> Running in 03f40cbf6bcb
+/usr/local/lib/python2.7/site-packages/torchvision/transforms/transforms.py:156: UserWarning: The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.
+  "please use transforms.Resize instead.")
+Traceback (most recent call last):
+  File "code/main.py", line 129, in <module>
+    transform=image_transform)
+  File "/usr/src/app/code/datasets.py", line 110, in __init__
+    self.bbox = self.load_bbox()
+  File "/usr/src/app/code/datasets.py", line 126, in load_bbox
+    header=None).astype(int)
+  File "/usr/local/lib/python2.7/site-packages/pandas/io/parsers.py", line 709, in parser_f
+Using config:
+{'B_VALIDATION': False,
+ 'CONFIG_NAME': 'attn2',
+ 'CUDA': False,
+ 'DATASET_NAME': 'birds',
+ 'DATA_DIR': '../data/birds',
+ 'GAN': {'B_ATTENTION': True,
+         'B_DCGAN': False,
+         'CONDITION_DIM': 100,
+         'DF_DIM': 64,
+         'GF_DIM': 32,
+         'R_NUM': 2,
+         'Z_DIM': 100},
+ 'GPU_ID': 3,
+ 'RNN_TYPE': 'LSTM',
+ 'TEXT': {'CAPTIONS_PER_IMAGE': 10, 'EMBEDDING_DIM': 256, 'WORDS_NUM': 25},
+ 'TRAIN': {'BATCH_SIZE': 100,
+           'B_NET_D': False,
+           'DISCRIMINATOR_LR': 0.0002,
+           'ENCODER_LR': 0.0002,
+           'FLAG': False,
+           'GENERATOR_LR': 0.0002,
+           'MAX_EPOCH': 600,
+           'NET_E': '../DAMSMencoders/bird/text_encoder200.pth',
+           'NET_G': '../models/bird_AttnGAN2.pth',
+           'RNN_GRAD_CLIP': 0.25,
+           'SMOOTH': {'GAMMA1': 5.0,
+                      'GAMMA2': 5.0,
+                      'GAMMA3': 10.0,
+                      'LAMBDA': 1.0},
+           'SNAPSHOT_INTERVAL': 2000},
+ 'TREE': {'BASE_SIZE': 64, 'BRANCH_NUM': 3},
+ 'WORKERS': 1}
+    return _read(filepath_or_buffer, kwds)
+  File "/usr/local/lib/python2.7/site-packages/pandas/io/parsers.py", line 449, in _read
+    parser = TextFileReader(filepath_or_buffer, **kwds)
+  File "/usr/local/lib/python2.7/site-packages/pandas/io/parsers.py", line 818, in __init__
+    self._make_engine(self.engine)
+  File "/usr/local/lib/python2.7/site-packages/pandas/io/parsers.py", line 1049, in _make_engine
+    self._engine = CParserWrapper(self.f, **self.options)
+  File "/usr/local/lib/python2.7/site-packages/pandas/io/parsers.py", line 1695, in __init__
+    self._reader = parsers.TextReader(src, **kwds)
+  File "pandas/_libs/parsers.pyx", line 402, in pandas._libs.parsers.TextReader.__cinit__
+  File "pandas/_libs/parsers.pyx", line 718, in pandas._libs.parsers.TextReader._setup_parser_source
+IOError: File ../data/birds/CUB_200_2011/bounding_boxes.txt does not exist
+
+C:\ML\AttnGAN>docker run -it attngan 
+usage: main.py [-h] [--cfg CFG_FILE] [--gpu GPU_ID] [--data_dir DATA_DIR]
+               [--manualSeed MANUALSEED]
+main.py: error: unrecognized arguments: --cfg code/cfg/eval_bird.yml

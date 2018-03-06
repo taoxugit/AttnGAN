@@ -33,7 +33,12 @@ class condGANTrainer(object):
             mkdir_p(self.model_dir)
             mkdir_p(self.image_dir)
 
-        torch.cuda.set_device(cfg.GPU_ID)
+        # added gpu check
+        print('CUDA:', cfg.CUDA)
+        print('CPU ID:', cfg.GPU_ID)
+        if cfg.CUDA:
+            torch.cuda.set_device(cfg.GPU_ID)
+
         cudnn.benchmark = True
 
         self.batch_size = cfg.TRAIN.BATCH_SIZE
@@ -434,13 +439,13 @@ class condGANTrainer(object):
             print('Error: the path for morels is not found!')
         else:
             # Build and load the generator
-            text_encoder = \
-                RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
-            state_dict = \
-                torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
+            text_encoder =  RNN_ENCODER(self.n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
+            state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
             text_encoder.load_state_dict(state_dict)
             print('Load text encoder from:', cfg.TRAIN.NET_E)
-            text_encoder = text_encoder.cuda()
+
+            #text_encoder = text_encoder.cuda()
+
             text_encoder.eval()
 
             # the path to save generated images
@@ -454,7 +459,10 @@ class condGANTrainer(object):
                 torch.load(model_dir, map_location=lambda storage, loc: storage)
             netG.load_state_dict(state_dict)
             print('Load G from: ', model_dir)
-            netG.cuda()
+
+            if cfg.CUDA:
+                netG.cuda()
+
             netG.eval()
             for key in data_dic:
                 save_dir = '%s/%s' % (s_tmp, key)
@@ -466,11 +474,13 @@ class condGANTrainer(object):
                 captions = Variable(torch.from_numpy(captions), volatile=True)
                 cap_lens = Variable(torch.from_numpy(cap_lens), volatile=True)
 
-                captions = captions.cuda()
-                cap_lens = cap_lens.cuda()
+                if cfg.CUDA:
+                    captions = captions.cuda()
+                    cap_lens = cap_lens.cuda()
                 for i in range(1):  # 16
                     noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
-                    noise = noise.cuda()
+                    if cfg.CUDA:
+                        noise = noise.cuda()
                     #######################################################
                     # (1) Extract text embeddings
                     ######################################################
