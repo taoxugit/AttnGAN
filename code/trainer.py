@@ -444,8 +444,7 @@ class condGANTrainer(object):
             text_encoder.load_state_dict(state_dict)
             print('Load text encoder from:', cfg.TRAIN.NET_E)
 
-            #text_encoder = text_encoder.cuda()
-
+            text_encoder = text_encoder.cuda()
             text_encoder.eval()
 
             # the path to save generated images
