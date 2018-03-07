@@ -1,6 +1,5 @@
 from __future__ import print_function
 from six.moves import range
-import inspect
 
 import torch
 import torch.nn as nn
@@ -25,15 +24,6 @@ import time
 import numpy as np
 import sys
 
-def info_caller():
-    # getting calling function
-    caller = inspect.stack()[1]
-    print(" - Using: %s" % caller)
-    args, _, _, values = inspect.getargvalues(caller[0])
-    for i in args:
-        o = str(values[i]).replace("\n", "            \n")
-        print ("      %s = %s" % (i, o))
-
 # ################# Text to image task############################ #
 class condGANTrainer(object):
     def __init__(self, output_dir, data_loader, n_words, ixtoword):
@@ -43,7 +33,8 @@ class condGANTrainer(object):
             mkdir_p(self.model_dir)
             mkdir_p(self.image_dir)
 
-        torch.cuda.set_device(cfg.GPU_ID)
+        if cfg.CUDA:
+            torch.cuda.set_device(cfg.GPU_ID)
         cudnn.benchmark = True
 
         self.batch_size = cfg.TRAIN.BATCH_SIZE
@@ -440,7 +431,6 @@ class condGANTrainer(object):
                         im.save(fullpath)
 
     def gen_example(self, data_dic):
-        info_caller()
         if cfg.TRAIN.NET_G == '':
             print('Error: the path for morels is not found!')
         else:
