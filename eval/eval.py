@@ -19,7 +19,7 @@ else:
     import pickle
 
 if __name__ == "__main__":
-    caption = "this bird has yellow feathers and a white belly with a long beak"
+    caption = "the bird has a yellow crown and a black eyering that is round"
     
     # load configuration
     cfg_from_file('eval_bird.yml')
@@ -82,7 +82,8 @@ if __name__ == "__main__":
     # storing to blob storage
     blob_service = BlockBlobService(account_name='attgan', account_key='tqMJN9RH+MW7UhDQbIEyXxoS1/wqAtvfKiC7hHJ8QrbtWF2k6yeIb/xHtya3QRGmUyDD7pATI4op2Ni6Iji4qQ==')
     container_name = "images"
-
+    full_path = "https://attgan.blob.core.windows.net/images/%s"
+    urls = []
     # only look at first one
     j = 0
     for k in range(len(fake_imgs)):
@@ -99,6 +100,7 @@ if __name__ == "__main__":
 
         blob_name = '%s_g%d.png' % ("bird", k)
         blob_service.create_blob_from_stream(container_name, blob_name, stream)
+        urls.append(full_path % blob_name)
 
     for k in range(len(attention_maps)):
         if len(fake_imgs) > 1:
@@ -120,6 +122,7 @@ if __name__ == "__main__":
 
             blob_name = '%s_a%d.png' % ("attmaps", k)
             blob_service.create_blob_from_stream(container_name, blob_name, stream)
-
+            urls.append(full_path % blob_name)
 
     print(caption)
+    print(urls)
