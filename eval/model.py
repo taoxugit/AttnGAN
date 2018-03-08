@@ -308,6 +308,7 @@ class INIT_STAGE_G(nn.Module):
         nz, ngf = self.in_dim, self.gf_dim
         self.fc = nn.Sequential(
             nn.Linear(nz, ngf * 4 * 4 * 2, bias=False),
+            # removing for single instance caption
             nn.BatchNorm1d(ngf * 4 * 4 * 2),
             GLU())
 
