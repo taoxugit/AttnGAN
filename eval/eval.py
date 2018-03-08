@@ -4,8 +4,10 @@ import os
 import sys
 import torch
 import io
+import time
 import numpy as np
 from PIL import Image
+from datetime import datetime
 from torch.autograd import Variable
 from nltk.tokenize import RegexpTokenizer
 from miscc.config import cfg, cfg_from_file
@@ -18,18 +20,7 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
-if __name__ == "__main__":
-    caption = "the bird has a yellow crown and a black eyering that is round"
-    
-    # load configuration
-    cfg_from_file('eval_bird.yml')
-
-    # load word to index dictionary
-    x = pickle.load(open('data/captions.pickle', 'rb'))
-    ixtoword = x[2]
-    wordtoix = x[3]
-    del x
-
+def vectorize_caption(wordtoix, caption):
     # create caption vector
     tokenizer = RegexpTokenizer(r'\w+')
     tokens = tokenizer.tokenize(caption.lower())
@@ -41,21 +32,13 @@ if __name__ == "__main__":
 
     # expected state for single generation
     captions, cap_lens = np.array([cap_v, cap_v]), np.array([len(cap_v), len(cap_v)])
+
+    return captions, cap_lens
+
+def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service):
+    # load word vector
+    captions, cap_lens  = vectorize_caption(wordtoix, caption)
     n_words = len(wordtoix)
-
-    # run inference
-    print('Load text encoder from:', cfg.TRAIN.NET_E)
-    text_encoder = RNN_ENCODER(n_words, nhidden=cfg.TEXT.EMBEDDING_DIM)
-    state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
-    text_encoder.load_state_dict(state_dict)
-    text_encoder.eval()
-
-    print('Load G from: ', cfg.TRAIN.NET_G)
-    netG = G_NET()
-    model_dir = cfg.TRAIN.NET_G
-    state_dict = torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
-    netG.load_state_dict(state_dict)
-    netG.eval()
 
     # only one to generate
     batch_size = captions.shape[0]
@@ -80,9 +63,9 @@ if __name__ == "__main__":
     cap_lens_np = cap_lens.cpu().data.numpy()
 
     # storing to blob storage
-    blob_service = BlockBlobService(account_name='attgan', account_key='')
     container_name = "images"
     full_path = "https://attgan.blob.core.windows.net/images/%s"
+    prefix = datetime.now().strftime('%Y/%B/%d/%H_%M_%S_%f')
     urls = []
     # only look at first one
     j = 0
@@ -98,7 +81,8 @@ if __name__ == "__main__":
         im.save(stream, format="png")
         stream.seek(0)
 
-        blob_name = '%s_g%d.png' % ("bird", k)
+        blob_name = '%s/%s_g%d.png' % (prefix, "bird", k)
+        print(blob_name)
         blob_service.create_blob_from_stream(container_name, blob_name, stream)
         urls.append(full_path % blob_name)
 
@@ -120,9 +104,50 @@ if __name__ == "__main__":
             im.save(stream, format="png")
             stream.seek(0)
 
-            blob_name = '%s_a%d.png' % ("attmaps", k)
+            blob_name = '%s/%s_a%d.png' % (prefix, "attmaps", k)
+            print(blob_name)
             blob_service.create_blob_from_stream(container_name, blob_name, stream)
             urls.append(full_path % blob_name)
+    
+    return urls
+    
 
-    print(caption)
+if __name__ == "__main__":
+    caption = "the bird has a yellow crown and a black eyering that is round"
+    
+    # load configuration
+    cfg_from_file('eval_bird.yml')
+
+    # load word to index dictionary
+    x = pickle.load(open('data/captions.pickle', 'rb'))
+    ixtoword = x[2]
+    wordtoix = x[3]
+    del x
+
+    # run inference
+    print('Load text encoder from:', cfg.TRAIN.NET_E)
+    text_encoder = RNN_ENCODER(len(wordtoix), nhidden=cfg.TEXT.EMBEDDING_DIM)
+    state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
+    text_encoder.load_state_dict(state_dict)
+    text_encoder.eval()
+
+    print('Load G from: ', cfg.TRAIN.NET_G)
+    netG = G_NET()
+    model_dir = cfg.TRAIN.NET_G
+    state_dict = torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
+    netG.load_state_dict(state_dict)
+    netG.eval()
+
+    blob_service = BlockBlobService(account_name='attgan', account_key='ievImT+7bmaRnjs0R28wxdfCZJjkJGtluv6QFW+yF3zpAqwVEb9KUEwfjbCej9OgPNMTRAcw0GhsGanoST/mAQ==')
+    
+    t0 = time.time()
+    urls = generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service)
+    t1 = time.time()
+    print(t1-t0)
+    print(urls)
+
+    t0 = time.time()
+    urls = generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service)
+    t1 = time.time()
+    print(t1-t0)
     print(urls)
