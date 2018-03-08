@@ -80,7 +80,7 @@ if __name__ == "__main__":
     cap_lens_np = cap_lens.cpu().data.numpy()
 
     # storing to blob storage
-    blob_service = BlockBlobService(account_name='attgan', account_key='tqMJN9RH+MW7UhDQbIEyXxoS1/wqAtvfKiC7hHJ8QrbtWF2k6yeIb/xHtya3QRGmUyDD7pATI4op2Ni6Iji4qQ==')
+    blob_service = BlockBlobService(account_name='attgan', account_key='')
     container_name = "images"
     full_path = "https://attgan.blob.core.windows.net/images/%s"
     urls = []
