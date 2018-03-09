@@ -9,8 +9,7 @@ import numpy as np
 from PIL import Image
 from datetime import datetime
 from torch.autograd import Variable
-from nltk.tokenize import RegexpTokenizer
-from miscc.config import cfg, cfg_from_file
+from miscc.config import cfg
 from miscc.utils import build_super_images2
 from model import RNN_ENCODER, G_NET
 from azure.storage.blob import BlockBlobService
@@ -20,13 +19,15 @@ if sys.version_info[0] == 2:
 else:
     import pickle
 
+from werkzeug.contrib.cache import SimpleCache
+cache = SimpleCache()
+
 def vectorize_caption(wordtoix, caption):
     # create caption vector
-    tokenizer = RegexpTokenizer(r'\w+')
-    tokens = tokenizer.tokenize(caption.lower())
+    tokens = caption.split(' ')
     cap_v = []
     for t in tokens:
-        t = t.encode('ascii', 'ignore').decode('ascii')
+        t = t.strip().encode('ascii', 'ignore').decode('ascii')
         if len(t) > 0 and t in wordtoix:
             cap_v.append(wordtoix[t])
 
@@ -110,35 +111,72 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service):
     return urls
 
 def word_index():
-    # load word to index dictionary
-    x = pickle.load(open('data/captions.pickle', 'rb'))
-    ixtoword = x[2]
-    wordtoix = x[3]
-    del x
+
+    ixtoword = cache.get('ixtoword')
+    wordtoix = cache.get('wordtoix')
+    if ixtoword is None or wordtoix is None:
+        print("ix and word not cached")
+        # load word to index dictionary
+        x = pickle.load(open('data/captions.pickle', 'rb'))
+        ixtoword = x[2]
+        wordtoix = x[3]
+        del x
+        cache.set('ixtoword', ixtoword, timeout=60 * 60 * 24)
+        cache.set('wordtoix', wordtoix, timeout=60 * 60 * 24)
 
     return wordtoix, ixtoword
 
 def models(word_len):
-    # run inference
-    text_encoder = RNN_ENCODER(word_len, nhidden=cfg.TEXT.EMBEDDING_DIM)
-    state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
-    text_encoder.load_state_dict(state_dict)
-    text_encoder.eval()
 
-    netG = G_NET()
-    model_dir = cfg.TRAIN.NET_G
-    state_dict = torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
-    netG.load_state_dict(state_dict)
-    netG.eval()
+    text_encoder = cache.get('text_encoder')
+    if text_encoder is None:
+        print("text_encoder not cached")
+        text_encoder = RNN_ENCODER(word_len, nhidden=cfg.TEXT.EMBEDDING_DIM)
+        state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
+        text_encoder.load_state_dict(state_dict)
+        text_encoder.eval()
+        cache.set('text_encoder', text_encoder, timeout=60 * 60 * 24)
+
+    netG = cache.get('netG')
+    if netG is None:
+        print("netG not cached")
+        netG = G_NET()
+        state_dict = torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
+        netG.load_state_dict(state_dict)
+        netG.eval()
+        cache.set('netG', netG, timeout=60 * 60 * 24)
 
     return text_encoder, netG
-    
+
+def eval(caption):
+    # load word dictionaries
+    wordtoix, ixtoword = word_index()
+    # lead models
+    text_encoder, netG = models(len(wordtoix))
+    # load blob service
+    blob_service = BlockBlobService(account_name='attgan', account_key=os.environ["BLOB_KEY"])
+
+    t0 = time.time()
+    urls = generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service)
+    t1 = time.time()
+
+    response = {
+        'small': urls[0],
+        'medium': urls[1],
+        'large': urls[2],
+        'map1': urls[3],
+        'map2': urls[4],
+        'caption': caption,
+        'elapsed': t1 - t0
+    }
+
+    return response
 
 if __name__ == "__main__":
     caption = "the bird has a yellow crown and a black eyering that is round"
     
     # load configuration
-    cfg_from_file('eval_bird.yml')
+    #cfg_from_file('eval_bird.yml')
     # load word dictionaries
     wordtoix, ixtoword = word_index()
     # lead models
