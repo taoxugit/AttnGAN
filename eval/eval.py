@@ -82,7 +82,6 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service):
         stream.seek(0)
 
         blob_name = '%s/%s_g%d.png' % (prefix, "bird", k)
-        print(blob_name)
         blob_service.create_blob_from_stream(container_name, blob_name, stream)
         urls.append(full_path % blob_name)
 
@@ -105,11 +104,34 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service):
             stream.seek(0)
 
             blob_name = '%s/%s_a%d.png' % (prefix, "attmaps", k)
-            print(blob_name)
             blob_service.create_blob_from_stream(container_name, blob_name, stream)
             urls.append(full_path % blob_name)
     
     return urls
+
+def word_index():
+    # load word to index dictionary
+    x = pickle.load(open('data/captions.pickle', 'rb'))
+    ixtoword = x[2]
+    wordtoix = x[3]
+    del x
+
+    return wordtoix, ixtoword
+
+def models(word_len):
+    # run inference
+    text_encoder = RNN_ENCODER(word_len, nhidden=cfg.TEXT.EMBEDDING_DIM)
+    state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
+    text_encoder.load_state_dict(state_dict)
+    text_encoder.eval()
+
+    netG = G_NET()
+    model_dir = cfg.TRAIN.NET_G
+    state_dict = torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
+    netG.load_state_dict(state_dict)
+    netG.eval()
+
+    return text_encoder, netG
     
 
 if __name__ == "__main__":
@@ -117,35 +139,13 @@ if __name__ == "__main__":
     
     # load configuration
     cfg_from_file('eval_bird.yml')
-
-    # load word to index dictionary
-    x = pickle.load(open('data/captions.pickle', 'rb'))
-    ixtoword = x[2]
-    wordtoix = x[3]
-    del x
-
-    # run inference
-    print('Load text encoder from:', cfg.TRAIN.NET_E)
-    text_encoder = RNN_ENCODER(len(wordtoix), nhidden=cfg.TEXT.EMBEDDING_DIM)
-    state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
-    text_encoder.load_state_dict(state_dict)
-    text_encoder.eval()
-
-    print('Load G from: ', cfg.TRAIN.NET_G)
-    netG = G_NET()
-    model_dir = cfg.TRAIN.NET_G
-    state_dict = torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
-    netG.load_state_dict(state_dict)
-    netG.eval()
-
-    blob_service = BlockBlobService(account_name='attgan', account_key='ievImT+7bmaRnjs0R28wxdfCZJjkJGtluv6QFW+yF3zpAqwVEb9KUEwfjbCej9OgPNMTRAcw0GhsGanoST/mAQ==')
+    # load word dictionaries
+    wordtoix, ixtoword = word_index()
+    # lead models
+    text_encoder, netG = models(len(wordtoix))
+    # load blob service
+    blob_service = BlockBlobService(account_name='attgan', account_key='[REDACTED]')
     
-    t0 = time.time()
-    urls = generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service)
-    t1 = time.time()
-    print(t1-t0)
-    print(urls)
-
     t0 = time.time()
     urls = generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service)
     t1 = time.time()

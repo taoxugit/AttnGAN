@@ -10,7 +10,7 @@ COPY . /usr/src/app
 
 EXPOSE 8080
 
-CMD ["python", "eval.py"]
+CMD ["python", "main.py"]
 
 #RUN python code/main.py --cfg code/cfg/eval_bird.yml
 
