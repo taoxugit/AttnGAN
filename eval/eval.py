@@ -69,6 +69,7 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service):
     urls = []
     # only look at first one
     j = 0
+    #for j in range(batch_size):
     for k in range(len(fake_imgs)):
         im = fake_imgs[k][j].data.cpu().numpy()
         im = (im + 1.0) * 127.5
@@ -85,27 +86,30 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service):
         blob_service.create_blob_from_stream(container_name, blob_name, stream)
         urls.append(full_path % blob_name)
 
-    for k in range(len(attention_maps)):
-        if len(fake_imgs) > 1:
-            im = fake_imgs[k + 1].detach().cpu()
-        else:
-            im = fake_imgs[0].detach().cpu()
-        attn_maps = attention_maps[k]
-        att_sze = attn_maps.size(2)
-        img_set, sentences = \
-            build_super_images2(im[j].unsqueeze(0),
-                                captions[j].unsqueeze(0),
-                                [cap_lens_np[j]], ixtoword,
-                                [attn_maps[j]], att_sze)
-        if img_set is not None:
-            im = Image.fromarray(img_set)
-            stream = io.BytesIO()
-            im.save(stream, format="png")
-            stream.seek(0)
+        for k in range(len(attention_maps)):
+            if len(fake_imgs) > 1:
+                im = fake_imgs[k + 1].detach().cpu()
+            else:
+                im = fake_imgs[0].detach().cpu()
+            attn_maps = attention_maps[k]
+            att_sze = attn_maps.size(2)
 
-            blob_name = '%s/%s_a%d.png' % (prefix, "attmaps", k)
-            blob_service.create_blob_from_stream(container_name, blob_name, stream)
-            urls.append(full_path % blob_name)
+            # this is *the* pig
+            #img_set, sentences = \
+            #    build_super_images2(im[j].unsqueeze(0),
+            #                        captions[j].unsqueeze(0),
+            #                        [cap_lens_np[j]], ixtoword,
+            #                        [attn_maps[j]], att_sze)
+
+            #if img_set is not None:
+            #    im = Image.fromarray(img_set)
+            #    stream = io.BytesIO()
+            #    im.save(stream, format="png")
+            #    stream.seek(0)
+
+            #    blob_name = '%s/%s_a%d.png' % (prefix, "attmaps", k)
+            #    blob_service.create_blob_from_stream(container_name, blob_name, stream)
+            #    urls.append(full_path % blob_name)
     
     return urls
 

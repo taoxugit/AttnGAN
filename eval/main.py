@@ -4,6 +4,7 @@ import time
 from eval import *
 from flask import Flask, jsonify, request, abort
 from miscc.config import cfg, cfg_from_file
+#from werkzeug.contrib.profiler import ProfilerMiddleware
 
 app = Flask(__name__)
 
@@ -30,8 +31,8 @@ def create_bird():
         'small': urls[0],
         'medium': urls[1],
         'large': urls[2],
-        'map1': urls[3],
-        'map2': urls[4],
+        #'map1': urls[3],
+        #'map2': urls[4],
         'caption': caption,
         'elapsed': t1 - t0
     }
@@ -42,4 +43,7 @@ def get_bird():
     return 'hello!'
 
 if __name__ == '__main__':
+    #app.config['PROFILE'] = True
+    #app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[30])
+    #app.run(host='0.0.0.0', port=8080, debug = True)
     app.run(host='0.0.0.0', port=8080)
