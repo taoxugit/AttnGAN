@@ -3,13 +3,12 @@ import os
 import time
 from eval import *
 from flask import Flask, jsonify, request, abort
-from miscc.config import cfg, cfg_from_file
+from miscc.config import cfg
 #from werkzeug.contrib.profiler import ProfilerMiddleware
 
 app = Flask(__name__)
 
-# load configuration
-cfg_from_file('eval_bird.yml')
+
 # load word dictionaries
 wordtoix, ixtoword = word_index()
 # lead models
