@@ -22,7 +22,7 @@ else:
 from werkzeug.contrib.cache import SimpleCache
 cache = SimpleCache()
 
-def vectorize_caption(wordtoix, caption):
+def vectorize_caption(wordtoix, caption, copies=0):
     # create caption vector
     tokens = caption.split(' ')
     cap_v = []
@@ -47,6 +47,11 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service):
     captions = Variable(torch.from_numpy(captions), volatile=True)
     cap_lens = Variable(torch.from_numpy(cap_lens), volatile=True)
     noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
+
+    if cfg.CUDA:
+        captions = captions.cuda()
+        cap_lens = cap_lens.cuda()
+        noise = noise.cuda()
 
     #######################################################
     # (1) Extract text embeddings
@@ -87,30 +92,31 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service):
         blob_service.create_blob_from_stream(container_name, blob_name, stream)
         urls.append(full_path % blob_name)
 
-        for k in range(len(attention_maps)):
+        #for k in range(len(attention_maps)):
+        if False:
             if len(fake_imgs) > 1:
                 im = fake_imgs[k + 1].detach().cpu()
             else:
                 im = fake_imgs[0].detach().cpu()
+                    
             attn_maps = attention_maps[k]
             att_sze = attn_maps.size(2)
 
-            # this is *the* pig
-            #img_set, sentences = \
-            #    build_super_images2(im[j].unsqueeze(0),
-            #                        captions[j].unsqueeze(0),
-            #                        [cap_lens_np[j]], ixtoword,
-            #                        [attn_maps[j]], att_sze)
+            img_set, sentences = \
+                build_super_images2(im[j].unsqueeze(0),
+                                    captions[j].unsqueeze(0),
+                                    [cap_lens_np[j]], ixtoword,
+                                    [attn_maps[j]], att_sze)
 
-            #if img_set is not None:
-            #    im = Image.fromarray(img_set)
-            #    stream = io.BytesIO()
-            #    im.save(stream, format="png")
-            #    stream.seek(0)
+            if img_set is not None:
+                im = Image.fromarray(img_set)
+                stream = io.BytesIO()
+                im.save(stream, format="png")
+                stream.seek(0)
 
-            #    blob_name = '%s/%s_a%d.png' % (prefix, "attmaps", k)
-            #    blob_service.create_blob_from_stream(container_name, blob_name, stream)
-            #    urls.append(full_path % blob_name)
+                blob_name = '%s/%s_a%d.png' % (prefix, "attmaps", k)
+                blob_service.create_blob_from_stream(container_name, blob_name, stream)
+                urls.append(full_path % blob_name)
     
     return urls
 
@@ -131,13 +137,16 @@ def word_index():
     return wordtoix, ixtoword
 
 def models(word_len):
-
     text_encoder = cache.get('text_encoder')
     if text_encoder is None:
         print("text_encoder not cached")
         text_encoder = RNN_ENCODER(word_len, nhidden=cfg.TEXT.EMBEDDING_DIM)
         state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
         text_encoder.load_state_dict(state_dict)
+        if cfg.CUDA:
+            print("text_encoder = text_encoder.cuda()")
+            text_encoder.cuda()
+            print("done")
         text_encoder.eval()
         cache.set('text_encoder', text_encoder, timeout=60 * 60 * 24)
 
@@ -147,6 +156,10 @@ def models(word_len):
         netG = G_NET()
         state_dict = torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
         netG.load_state_dict(state_dict)
+        if cfg.CUDA:
+            print("netG.cuda()")
+            netG.cuda()
+            print("done")
         netG.eval()
         cache.set('netG', netG, timeout=60 * 60 * 24)
 
