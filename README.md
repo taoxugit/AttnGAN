@@ -17,7 +17,7 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 - `pandas`
 - `torchfile`
 - `nltk`
-- `skikit-image`
+- `scikit-image`
 
 
 
