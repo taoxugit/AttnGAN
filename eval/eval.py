@@ -123,31 +123,32 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service, copi
             blob_service.create_blob_from_stream(container_name, blob_name, stream)
             urls.append(full_path % blob_name)
 
-            #for k in range(len(attention_maps)):
-            if False:
-                if len(fake_imgs) > 1:
-                    im = fake_imgs[k + 1].detach().cpu()
-                else:
-                    im = fake_imgs[0].detach().cpu()
-                        
-                attn_maps = attention_maps[k]
-                att_sze = attn_maps.size(2)
+            if copies == 2:
+                for k in range(len(attention_maps)):
+                #if False:
+                    if len(fake_imgs) > 1:
+                        im = fake_imgs[k + 1].detach().cpu()
+                    else:
+                        im = fake_imgs[0].detach().cpu()
+                            
+                    attn_maps = attention_maps[k]
+                    att_sze = attn_maps.size(2)
 
-                img_set, sentences = \
-                    build_super_images2(im[j].unsqueeze(0),
-                                        captions[j].unsqueeze(0),
-                                        [cap_lens_np[j]], ixtoword,
-                                        [attn_maps[j]], att_sze)
+                    img_set, sentences = \
+                        build_super_images2(im[j].unsqueeze(0),
+                                            captions[j].unsqueeze(0),
+                                            [cap_lens_np[j]], ixtoword,
+                                            [attn_maps[j]], att_sze)
 
-                if img_set is not None:
-                    im = Image.fromarray(img_set)
-                    stream = io.BytesIO()
-                    im.save(stream, format="png")
-                    stream.seek(0)
+                    if img_set is not None:
+                        im = Image.fromarray(img_set)
+                        stream = io.BytesIO()
+                        im.save(stream, format="png")
+                        stream.seek(0)
 
-                    blob_name = '%s/%s_a%d.png' % (prefix, "attmaps", k)
-                    blob_service.create_blob_from_stream(container_name, blob_name, stream)
-                    urls.append(full_path % blob_name)
+                        blob_name = '%s/%s_a%d.png' % (prefix, "attmaps", k)
+                        blob_service.create_blob_from_stream(container_name, blob_name, stream)
+                        urls.append(full_path % blob_name)
         if copies == 2:
             break
     

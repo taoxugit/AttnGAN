@@ -22,8 +22,8 @@ def create_bird():
         'small': urls[0],
         'medium': urls[1],
         'large': urls[2],
-        #'map1': urls[3],
-        #'map2': urls[4],
+        'map1': urls[3],
+        'map2': urls[4],
         'caption': caption,
         'elapsed': t1 - t0
     }
