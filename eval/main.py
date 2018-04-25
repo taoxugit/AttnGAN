@@ -53,7 +53,7 @@ def create_birds():
 
 @app.route('/', methods=['GET'])
 def get_bird():
-    return 'hello!'
+    return 'hello! - v5'
 
 if __name__ == '__main__':
     # gpu based
