@@ -3,15 +3,21 @@ import time
 import random
 from eval import *
 from flask import Flask, jsonify, request, abort
+from applicationinsights import TelemetryClient
+from applicationinsights.requests import WSGIApplication
+from applicationinsights.exceptions import enable
 from miscc.config import cfg
 #from werkzeug.contrib.profiler import ProfilerMiddleware
 
+enable(os.environ["TELEMETRY"])
 app = Flask(__name__)
+app.wsgi_app = WSGIApplication(os.environ["TELEMETRY"], app.wsgi_app)
 
 @app.route('/api/v1.0/bird', methods=['POST'])
 def create_bird():
     if not request.json or not 'caption' in request.json:
         abort(400)
+
     caption = request.json['caption']
 
     t0 = time.time()
@@ -33,6 +39,7 @@ def create_bird():
 def create_birds():
     if not request.json or not 'caption' in request.json:
         abort(400)
+
     caption = request.json['caption']
 
     t0 = time.time()
@@ -53,15 +60,15 @@ def create_birds():
 
 @app.route('/', methods=['GET'])
 def get_bird():
-    return 'hello! - v5'
+    return 'Version 1'
 
 if __name__ == '__main__':
+    t0 = time.time()
+    tc = TelemetryClient(os.environ["TELEMETRY"])
+    
     # gpu based
     cfg.CUDA = os.environ["GPU"].lower() == 'true'
-    if cfg.CUDA:
-        print('CUDA ON')
-    else:
-        print('CUDA OFF')
+    tc.track_event('container initializing', {"CUDA": str(cfg.CUDA)})
 
     # load word dictionaries
     wordtoix, ixtoword = word_index()
@@ -81,4 +88,6 @@ if __name__ == '__main__':
     #app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[30])
     #app.run(host='0.0.0.0', port=8080, debug = True)
 
+    t1 = time.time()
+    tc.track_event('container start', {"starttime": str(t1-t0)})
     app.run(host='0.0.0.0', port=8080)

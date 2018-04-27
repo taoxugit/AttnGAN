@@ -63,7 +63,7 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service, copi
         cap_lens = cap_lens.cuda()
         noise = noise.cuda()
 
-    #export = os.environ["EXPORT_MODEL"].lower() == 'true'
+    
 
     #######################################################
     # (1) Extract text embeddings
@@ -80,6 +80,7 @@ def generate(caption, wordtoix, ixtoword, text_encoder, netG, blob_service, copi
     fake_imgs, attention_maps, _, _ = netG(noise, sent_emb, words_embs, mask)
 
     # ONNX EXPORT
+    #export = os.environ["EXPORT_MODEL"].lower() == 'true'
     if False:
         print("saving text_encoder.onnx")
         text_encoder_out = torch.onnx._export(text_encoder, (captions, cap_lens, hidden), "text_encoder.onnx", export_params=True)
@@ -159,7 +160,7 @@ def word_index():
     ixtoword = cache.get('ixtoword')
     wordtoix = cache.get('wordtoix')
     if ixtoword is None or wordtoix is None:
-        print("ix and word not cached")
+        #print("ix and word not cached")
         # load word to index dictionary
         x = pickle.load(open('data/captions.pickle', 'rb'))
         ixtoword = x[2]
@@ -171,10 +172,10 @@ def word_index():
     return wordtoix, ixtoword
 
 def models(word_len):
-    print(word_len)
+    #print(word_len)
     text_encoder = cache.get('text_encoder')
     if text_encoder is None:
-        print("text_encoder not cached")
+        #print("text_encoder not cached")
         text_encoder = RNN_ENCODER(word_len, nhidden=cfg.TEXT.EMBEDDING_DIM)
         state_dict = torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
         text_encoder.load_state_dict(state_dict)
@@ -185,7 +186,7 @@ def models(word_len):
 
     netG = cache.get('netG')
     if netG is None:
-        print("netG not cached")
+        #print("netG not cached")
         netG = G_NET()
         state_dict = torch.load(cfg.TRAIN.NET_G, map_location=lambda storage, loc: storage)
         netG.load_state_dict(state_dict)
