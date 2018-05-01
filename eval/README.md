@@ -1,4 +1,4 @@
-# AttnGan Eval API
+# AttnGAN Eval API
 Model evaluation code is extracted here in order to create a separate inference mode for the project. The evaluation code is then embedded into a flask app that accepts API requests. 
 There are two docker files:
 1. [dockerfile.cpu](dockerfile.cpu) - creates a CPU bonud container
