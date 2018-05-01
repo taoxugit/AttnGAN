@@ -33,8 +33,7 @@ class condGANTrainer(object):
             mkdir_p(self.model_dir)
             mkdir_p(self.image_dir)
 
-        if cfg.CUDA:
-            torch.cuda.set_device(cfg.GPU_ID)
+        torch.cuda.set_device(cfg.GPU_ID)
         cudnn.benchmark = True
 
         self.batch_size = cfg.TRAIN.BATCH_SIZE
@@ -441,11 +440,10 @@ class condGANTrainer(object):
                 torch.load(cfg.TRAIN.NET_E, map_location=lambda storage, loc: storage)
             text_encoder.load_state_dict(state_dict)
             print('Load text encoder from:', cfg.TRAIN.NET_E)
-            #text_encoder = text_encoder.cuda()
+            text_encoder = text_encoder.cuda()
             text_encoder.eval()
 
             # the path to save generated images
-            print("cfg.GAN.B_DCGAN: " + str(cfg.GAN.B_DCGAN))
             if cfg.GAN.B_DCGAN:
                 netG = G_DCGAN()
             else:
@@ -456,27 +454,23 @@ class condGANTrainer(object):
                 torch.load(model_dir, map_location=lambda storage, loc: storage)
             netG.load_state_dict(state_dict)
             print('Load G from: ', model_dir)
-            #netG.cuda()
+            netG.cuda()
             netG.eval()
             for key in data_dic:
                 save_dir = '%s/%s' % (s_tmp, key)
                 mkdir_p(save_dir)
                 captions, cap_lens, sorted_indices = data_dic[key]
 
-                print("captions: " + str(captions) + " " + type(captions))
-                print("cap_lens: " + str(cap_lens) + " " + type(cap_lens))
-
                 batch_size = captions.shape[0]
-                print("batch_size: " + str(batch_size))
                 nz = cfg.GAN.Z_DIM
                 captions = Variable(torch.from_numpy(captions), volatile=True)
                 cap_lens = Variable(torch.from_numpy(cap_lens), volatile=True)
 
-                #captions = captions.cuda()
-                #cap_lens = cap_lens.cuda()
+                captions = captions.cuda()
+                cap_lens = cap_lens.cuda()
                 for i in range(1):  # 16
                     noise = Variable(torch.FloatTensor(batch_size, nz), volatile=True)
-                    #noise = noise.cuda()
+                    noise = noise.cuda()
                     #######################################################
                     # (1) Extract text embeddings
                     ######################################################
