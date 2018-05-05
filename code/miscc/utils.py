@@ -32,7 +32,8 @@ def drawCaption(convas, captions, ixtoword, vis_size, off1=2, off2=2):
     img_txt = Image.fromarray(convas)
     # get a font
     # fnt = None  # ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 50)
-    fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 50)
+    #fnt = ImageFont.truetype('Pillow/Tests/fonts/arial.ttf', 50)
+    #fnt = ImageFont.truetype('FreeMono.ttf', 50)
     # get a drawing context
     d = ImageDraw.Draw(img_txt)
     sentence_list = []
@@ -43,8 +44,9 @@ def drawCaption(convas, captions, ixtoword, vis_size, off1=2, off2=2):
             if cap[j] == 0:
                 break
             word = ixtoword[cap[j]].encode('ascii', 'ignore').decode('ascii')
-            d.text(((j + off1) * (vis_size + off2), i * FONT_MAX), '%d:%s' % (j, word[:6]),
-                   font=fnt, fill=(255, 255, 255, 255))
+            #d.text(((j + off1) * (vis_size + off2), i * FONT_MAX), '%d:%s' % (j, word[:6]),
+            #       font=fnt, fill=(255, 255, 255, 255))
+            d.text(((j + off1) * (vis_size + off2), i * FONT_MAX), '%d:%s' % (j, word[:6]), fill=(255, 255, 255, 255))
             sentence.append(word)
         sentence_list.append(sentence)
     return img_txt, sentence_list
