@@ -18,7 +18,7 @@ from datasets import prepare_data
 from model import RNN_ENCODER, CNN_ENCODER
 
 from miscc.losses import words_loss
-from miscc.losses import discriminator_loss, generator_loss, KL_loss
+from miscc.losses import discriminator_loss, generator_loss, KL_loss, discriminator_lossWGAN, generator_lossWGAN
 import os
 import time
 import numpy as np
@@ -273,6 +273,8 @@ class condGANTrainer(object):
                     # backward and update parameters
                     errD.backward()
                     optimizersD[i].step()
+#                    for p in netsD[i].parameters():
+#                        p.data.clamp_(-0.01, 0.01)
                     errD_total += errD
                     D_logs += 'errD%d: %.2f ' % (i, errD.data[0])
 
@@ -292,6 +294,9 @@ class condGANTrainer(object):
                 kl_loss = KL_loss(mu, logvar)
                 errG_total += kl_loss
                 G_logs += 'kl_loss: %.2f ' % kl_loss.data[0]
+#                wgan_loss, logs = generator_loss(netsD, fake_imgs)
+#                errG_total += wgan_loss
+#                G_logs += 'wgan_loss: %.2f ' % wgan_loss.data[0]
                 # backward and update parameters
                 errG_total.backward()
                 optimizerG.step()

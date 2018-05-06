@@ -5,8 +5,8 @@ import numpy as np
 from miscc.config import cfg
 
 from GlobalAttention import func_attention
-
-
+from torch.autograd import Variable
+import pdb
 # ##################Loss for matching text-image###################
 def cosine_similarity(x1, x2, dim=1, eps=1e-8):
     """Returns cosine similarity between x1 and x2, computed along dim.
@@ -161,6 +161,61 @@ def discriminator_loss(netD, real_imgs, fake_imgs, conditions,
     return errD
 
 
+def discriminator_lossWGAN(netD, real_imgs, fake_imgs, conditions,
+                       real_labels, fake_labels):
+    # Forward
+    real_features = netD(real_imgs)
+    fake_features = netD(fake_imgs.detach())
+    # loss
+    #
+    cond_real_logits = netD.COND_DNET(real_features, conditions)
+    cond_real_errD = torch.mean(cond_real_logits)
+    cond_fake_logits = netD.COND_DNET(fake_features, conditions)
+    cond_fake_errD = torch.mean(cond_fake_logits)
+    #
+    batch_size = real_features.size(0)
+    cond_wrong_logits = netD.COND_DNET(real_features[:(batch_size - 1)], conditions[1:batch_size])
+    cond_wrong_errD = torch.mean(cond_wrong_logits)
+
+    #------------Wasserstein Loss---------------#
+    wgan_loss = cond_fake_errD - cond_real_errD
+    
+
+    #-----------Gradient Penalty---------------#
+#    penalty_weight = 0.001
+#    xreal = real_imgs
+#    xfake = fake_imgs
+#    # Random linear combination of xreal and xfake
+#    alpha = Variable(torch.rand(xreal.size(0), 1, 1, 1, out=xreal.data.new()))
+#    xmix = (alpha * xreal) + ((1. - alpha) * xfake)
+#    pdb.set_trace()
+#    # Run discriminator on the combination
+#    ymix = netD(xmix)
+#    # Calculate gradient of output w.r.t. input
+#    ysum = ymix.sum()
+#    grads = torch.autograd.grad(ysum, [xmix], create_graph = True)[0]
+#    gradnorm = torch.sqrt((grads * grads).sum(3).sum(2).sum(1))
+#    graddiff = gradnorm - 1
+#    gradpenalty = (graddiff * graddiff).mean() * penalty_weight
+# 
+#    loss = wgan_loss + gradpenalty
+
+    return wgan_loss
+
+    '''
+    if netD.UNCOND_DNET is not None:
+        real_logits = netD.UNCOND_DNET(real_features)
+        fake_logits = netD.UNCOND_DNET(fake_features)
+        real_errD = torch.mean(real_logits)
+        fake_errD = torch.mean(fake_logits)
+        errD = ((real_errD + cond_real_errD) / 2. +
+                (fake_errD + cond_fake_errD + cond_wrong_errD) / 3.)
+    else:
+        errD = cond_real_errD + (cond_fake_errD + cond_wrong_errD) / 2.
+    return errD
+    '''
+
+
 def generator_loss(netsD, image_encoder, fake_imgs, real_labels,
                    words_embs, sent_emb, match_labels,
                    cap_lens, class_ids):
@@ -212,3 +267,26 @@ def KL_loss(mu, logvar):
     KLD_element = mu.pow(2).add_(logvar.exp()).mul_(-1).add_(1).add_(logvar)
     KLD = torch.mean(KLD_element).mul_(-0.5)
     return KLD
+
+def generator_lossWGAN(netsD,fake_imgs):
+
+    numDs = len(netsD)
+    #batch_size = real_labels.size(0)
+    logs = ''
+    # Forward
+    errG_total = 0
+    for i in range(numDs):
+        features = netsD[i](fake_imgs[i])
+        # cond_logits = netsD[i].COND_DNET(features, sent_emb)
+        cond_errG = torch.mean(features)
+        if netsD[i].UNCOND_DNET is  not None:
+            logits = netsD[i].UNCOND_DNET(features)
+            errG = torch.mean(logits)
+            g_loss = errG + cond_errG
+        else:
+            g_loss = cond_errG
+        errG_total += g_loss
+        # err_img = errG_total.data[0]
+        logs += 'g_loss%d: %.2f ' % (i, g_loss.data[0])
+
+    return errG_total, logs
