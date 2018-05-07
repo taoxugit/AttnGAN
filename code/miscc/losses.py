@@ -189,7 +189,7 @@ def discriminator_lossWGAN(netD, real_imgs, fake_imgs, conditions,
     alpha = Variable(torch.rand(xreal.size(0), 1, 1, 1, out=xreal.data.new()))
     xmix = (alpha * xreal) + ((1. - alpha) * xfake)
     # Run discriminator on the combination
-    ymix = netD(xmix)
+    ymix = netD(xmix.detach())
     # Calculate gradient of output w.r.t. input
     ysum = ymix.sum()
     grads = torch.autograd.grad(ysum, [xmix], create_graph = True, retain_graph=True)[0]
