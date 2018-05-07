@@ -182,25 +182,24 @@ def discriminator_lossWGAN(netD, real_imgs, fake_imgs, conditions,
     
 
     #-----------Gradient Penalty---------------#
-#    penalty_weight = 0.001
-#    xreal = real_imgs
-#    xfake = fake_imgs
-#    # Random linear combination of xreal and xfake
-#    alpha = Variable(torch.rand(xreal.size(0), 1, 1, 1, out=xreal.data.new()))
-#    xmix = (alpha * xreal) + ((1. - alpha) * xfake)
-#    pdb.set_trace()
-#    # Run discriminator on the combination
-#    ymix = netD(xmix)
-#    # Calculate gradient of output w.r.t. input
-#    ysum = ymix.sum()
-#    grads = torch.autograd.grad(ysum, [xmix], create_graph = True)[0]
-#    gradnorm = torch.sqrt((grads * grads).sum(3).sum(2).sum(1))
-#    graddiff = gradnorm - 1
-#    gradpenalty = (graddiff * graddiff).mean() * penalty_weight
-# 
-#    loss = wgan_loss + gradpenalty
+    penalty_weight = 20
+    xreal = real_imgs
+    xfake = fake_imgs
+    # Random linear combination of xreal and xfake
+    alpha = Variable(torch.rand(xreal.size(0), 1, 1, 1, out=xreal.data.new()))
+    xmix = (alpha * xreal) + ((1. - alpha) * xfake)
+    # Run discriminator on the combination
+    ymix = netD(xmix)
+    # Calculate gradient of output w.r.t. input
+    ysum = ymix.sum()
+    grads = torch.autograd.grad(ysum, [xmix], create_graph = True, retain_graph=True)[0]
+    gradnorm = torch.sqrt((grads * grads).sum(3).sum(2).sum(1))
+    graddiff = gradnorm - 1
+    gradpenalty = (graddiff * graddiff).mean() * penalty_weight
+ 
+    loss = wgan_loss + gradpenalty
 
-    return wgan_loss
+    return loss
 
     '''
     if netD.UNCOND_DNET is not None:

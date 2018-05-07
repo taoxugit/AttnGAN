@@ -8,6 +8,9 @@ from torch.autograd import Variable
 import torch.backends.cudnn as cudnn
 
 from PIL import Image
+import skimage
+import skimage.io
+import eval_utils
 
 from miscc.config import cfg
 from miscc.utils import mkdir_p
@@ -16,6 +19,12 @@ from miscc.utils import weights_init, load_params, copy_G_params
 from model import G_DCGAN, G_NET
 from datasets import prepare_data
 from model import RNN_ENCODER, CNN_ENCODER
+from resnet_utils import myResnet
+import caption_models
+from resnet import ResNet, Bottleneck
+
+from torchvision import transforms as trn
+import pdb
 
 from miscc.losses import words_loss
 from miscc.losses import discriminator_loss, generator_loss, KL_loss, discriminator_lossWGAN, generator_lossWGAN
@@ -228,6 +237,12 @@ class condGANTrainer(object):
         if cfg.CUDA:
             noise, fixed_noise = noise.cuda(), fixed_noise.cuda()
 
+        my_resnet = ResNet(Bottleneck, [3, 4, 23, 3])
+        my_resnet.load_state_dict(torch.load('/pylon5/ir3l68p/prane/DL_Project/AttnGAN/models/resnet101.pth'))  #'./data/imagenet_weights/'+self.cnn_model+'.pth'))
+        my_resnet = myResnet(my_resnet) 
+        my_resnet.cuda()
+        my_resnet.eval()
+
         gen_iterations = 0
         # gen_iterations = start_epoch * self.num_batches
         for epoch in range(start_epoch, self.max_epoch):
@@ -262,7 +277,47 @@ class condGANTrainer(object):
                 fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask)
 
                 #######################################################
-                # (3) Update D network
+	        # (3) Generate captions for fake images
+	        #######################################################
+                
+                preprocess = trn.Compose([
+                             #trn.ToTensor(),
+                             trn.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+                ])
+                fc_batch = np.ndarray((batch_size, 2048), dtype = 'float32')
+                att_batch = np.ndarray((batch_size, 14, 14, 2048), dtype = 'float32')	        
+
+                for i in range(batch_size):
+                    gen_img = fake_imgs[-1][i].data.cpu().numpy()
+                    gen_img = (gen_img + 1.0) * 127.5
+                    gen_img = gen_img.astype(np.uint8)
+                    gen_img = np.transpose(gen_img, (1, 2, 0))                    
+
+                    if len(gen_img.shape) == 2:
+                        gen_img = gen_img[:,:,np.newaxis]
+                        gen_img = np.concatenate((gen_img, gen_img, gen_img), axis=2)
+
+                    gen_img = gen_img.astype('float32')/255.0
+                    gen_img = torch.from_numpy(gen_img.transpose([2,0,1])).cuda()
+                    gen_img = Variable(preprocess(gen_img), volatile=True)
+                    tmp_fc, tmp_att = my_resnet(gen_img)
+                    
+                    fc_batch[i] = tmp_fc.data.cpu().float().numpy()
+                    att_batch[i] = tmp_att.data.cpu().float().numpy()
+
+                #TODO  Captions 
+
+                data = {}
+                data['fc_feats'] = fc_batch
+                data['att_feats'] = att_batch
+                data['labels'] = captions.data.cpu().numpy()
+                data['masks'] = mask.data.cpu().numpy()
+                pdb.set_trace()
+                caption_loss = eval_utils.custom_eval_split(data)
+                print("Caption loss: ", caption_loss)
+                
+                #######################################################
+                # (4) Update D network
                 ######################################################
                 errD_total = 0
                 D_logs = ''
@@ -279,7 +334,7 @@ class condGANTrainer(object):
                     D_logs += 'errD%d: %.2f ' % (i, errD.data[0])
 
                 #######################################################
-                # (4) Update G network: maximize log(D(G(z)))
+                # (5) Update G network: maximize log(D(G(z)))
                 ######################################################
                 # compute total loss for training G
                 step += 1
@@ -318,6 +373,8 @@ class condGANTrainer(object):
                     #                       words_embs, mask, image_encoder,
                     #                       captions, cap_lens,
                     #                       epoch, name='current')
+            
+
             end_t = time.time()
 
             print('''[%d/%d][%d]
@@ -436,7 +493,7 @@ class condGANTrainer(object):
 
     def gen_example(self, data_dic):
         if cfg.TRAIN.NET_G == '':
-            print('Error: the path for morels is not found!')
+            print('Error: the path for models is not found!')
         else:
             # Build and load the generator
             text_encoder = \
@@ -520,3 +577,4 @@ class condGANTrainer(object):
                                 im = Image.fromarray(img_set)
                                 fullpath = '%s_a%d.png' % (save_name, k)
                                 im.save(fullpath)
+  

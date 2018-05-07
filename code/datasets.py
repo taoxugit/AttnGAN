@@ -18,6 +18,7 @@ import sys
 import numpy as np
 import pandas as pd
 from PIL import Image
+import pdb
 import numpy.random as random
 if sys.version_info[0] == 2:
     import cPickle as pickle
@@ -112,6 +113,7 @@ class TextDataset(data.Dataset):
             self.bbox = None
         split_dir = os.path.join(data_dir, split)
 
+        pdb.set_trace()
         self.filenames, self.captions, self.ixtoword, \
             self.wordtoix, self.n_words = self.load_text_data(data_dir, split)
 
@@ -146,13 +148,31 @@ class TextDataset(data.Dataset):
         all_captions = []
         for i in range(len(filenames)):
             cap_path = '%s/text/%s.txt' % (data_dir, filenames[i])
+            print("Done with: %s / %s" % (str(i), str(len(filenames))))
+            f = open(cap_path, "r")
+            captions = f.readlines()
+            f.close()
+
+            cnt = 0
+            
+            for cap in captions:
+                tokens = cap.lower().split()
+                tokens_new = []
+                for t in tokens:
+                    t = t.encode('ascii', 'ignore').decode('ascii')
+                    tokens_new.append(t)
+                all_captions.append(tokens_new)
+                cnt += 1
+                if cnt == self.embeddings_num:
+                    break
+            '''
             with open(cap_path, "r") as f:
-                captions = f.read().decode('utf8').split('\n')
+                captions = f.read().split('\n')
                 cnt = 0
                 for cap in captions:
                     if len(cap) == 0:
                         continue
-                    cap = cap.replace("\ufffd\ufffd", " ")
+                    #cap = cap.replace("\ufffd\ufffd", " ")
                     # picks out sequences of alphanumeric characters as tokens
                     # and drops everything else
                     tokenizer = RegexpTokenizer(r'\w+')
@@ -165,8 +185,8 @@ class TextDataset(data.Dataset):
                     tokens_new = []
                     for t in tokens:
                         t = t.encode('ascii', 'ignore').decode('ascii')
-                        if len(t) > 0:
-                            tokens_new.append(t)
+                        #if len(t) > 0:
+                        tokens_new.append(t)
                     all_captions.append(tokens_new)
                     cnt += 1
                     if cnt == self.embeddings_num:
@@ -174,6 +194,8 @@ class TextDataset(data.Dataset):
                 if cnt < self.embeddings_num:
                     print('ERROR: the captions for %s less than %d'
                           % (filenames[i], cnt))
+            '''
+
         return all_captions
 
     def build_dictionary(self, train_captions, test_captions):
@@ -183,7 +205,8 @@ class TextDataset(data.Dataset):
             for word in sent:
                 word_counts[word] += 1
 
-        vocab = [w for w in word_counts if word_counts[w] >= 0]
+        pdb.set_trace()
+        vocab = [w for w in word_counts if word_counts[w] > 5]
 
         ixtoword = {}
         ixtoword[0] = '<end>'
@@ -221,6 +244,7 @@ class TextDataset(data.Dataset):
         train_names = self.load_filenames(data_dir, 'train')
         test_names = self.load_filenames(data_dir, 'test')
         if not os.path.isfile(filepath):
+            pdb.set_trace()
             train_captions = self.load_captions(data_dir, train_names)
             test_captions = self.load_captions(data_dir, test_names)
 
