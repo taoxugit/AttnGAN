@@ -17,7 +17,7 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 - `pandas`
 - `torchfile`
 - `nltk`
-- `skikit-image`
+- `scikit-image`
 
 
 
@@ -69,6 +69,8 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 ![](https://github.com/taoxugit/AttnGAN/blob/master/example_bird.png)  |  ![](https://github.com/taoxugit/AttnGAN/blob/master/example_coco.png)
 
 
+### Creating an API
+[Evaluation code](eval) embedded into a callable containerized API is included in the `eval\` folder.
 
 ### Citing AttnGAN
 If you find AttnGAN useful in your research, please consider citing:
