@@ -13,6 +13,7 @@ import torch.utils.data as data
 from torch.autograd import Variable
 import torchvision.transforms as transforms
 
+from six.moves import cPickle
 import os
 import sys
 import numpy as np
@@ -24,7 +25,7 @@ if sys.version_info[0] == 2:
     import cPickle as pickle
 else:
     import pickle
-
+import string
 
 def prepare_data(data):
     imgs, captions, captions_lens, class_ids, keys = data
@@ -113,7 +114,6 @@ class TextDataset(data.Dataset):
             self.bbox = None
         split_dir = os.path.join(data_dir, split)
 
-        #pdb.set_trace()
         self.filenames, self.captions, self.ixtoword, \
             self.wordtoix, self.n_words = self.load_text_data(data_dir, split)
 
@@ -135,7 +135,7 @@ class TextDataset(data.Dataset):
         #
         filename_bbox = {img_file[:-4]: [] for img_file in filenames}
         numImgs = len(filenames)
-        for i in xrange(0, numImgs):
+        for i in range(0, numImgs):
             # bbox = [x-left, y-top, width, height]
             bbox = df_bounding_boxes.iloc[i][1:].tolist()
 
@@ -148,13 +148,39 @@ class TextDataset(data.Dataset):
         all_captions = []
         for i in range(len(filenames)):
             cap_path = '%s/text/%s.txt' % (data_dir, filenames[i])
+            print("Done with: %s / %s" % (str(i), str(len(filenames))))
+            f = open(cap_path, "r")
+            captions = f.readlines()
+            f.close()
+
+            cnt = 0
+            
+            for cap in captions:
+                #tokenizer = RegexpTokenizer(r'\w+')
+                #tokens = tokenizer.tokenize(cap.lower())
+                if len(cap) == 0:
+                    continue
+                to_remove = string.punctuation
+                table = {ord(char): None for char in to_remove}
+                tokens = cap.lower().translate(table).strip().split()
+                if len(tokens) == 0:
+                    continue
+                tokens_new = []
+                for t in tokens:
+                    t = t.encode('ascii', 'ignore').decode('ascii')
+                    tokens_new.append(t)
+                all_captions.append(tokens_new)
+                cnt += 1
+                if cnt == self.embeddings_num:
+                    break
+            '''
             with open(cap_path, "r") as f:
                 captions = f.read().split('\n')
                 cnt = 0
                 for cap in captions:
                     if len(cap) == 0:
                         continue
-                    cap = cap.replace("\ufffd\ufffd", " ")
+                    #cap = cap.replace("\ufffd\ufffd", " ")
                     # picks out sequences of alphanumeric characters as tokens
                     # and drops everything else
                     tokenizer = RegexpTokenizer(r'\w+')
@@ -167,8 +193,8 @@ class TextDataset(data.Dataset):
                     tokens_new = []
                     for t in tokens:
                         t = t.encode('ascii', 'ignore').decode('ascii')
-                        if len(t) > 0:
-                            tokens_new.append(t)
+                        #if len(t) > 0:
+                        tokens_new.append(t)
                     all_captions.append(tokens_new)
                     cnt += 1
                     if cnt == self.embeddings_num:
@@ -176,17 +202,23 @@ class TextDataset(data.Dataset):
                 if cnt < self.embeddings_num:
                     print('ERROR: the captions for %s less than %d'
                           % (filenames[i], cnt))
+            '''
+
         return all_captions
 
     def build_dictionary(self, train_captions, test_captions):
-        word_counts = defaultdict(float)
+        
+        word_counts = {}
         captions = train_captions + test_captions
         for sent in captions:
             for word in sent:
-                word_counts[word] += 1
+                word_counts[word] = word_counts.get(word, 0) + 1
 
         #pdb.set_trace()
-        vocab = [w for w in word_counts if word_counts[w] >= 5]
+        #vocab = [w for w in word_counts if word_counts[w] > 5]
+        vocab = [w for w,n in word_counts.items() if n > 5]
+        vocab.append('UNK')
+        
 
         ixtoword = {}
         ixtoword[0] = '<end>'
@@ -197,7 +229,23 @@ class TextDataset(data.Dataset):
             wordtoix[w] = ix
             ixtoword[ix] = w
             ix += 1
-
+        '''
+        infos_file = open("../../ImageCaptioning.pytorch/infos_td-best.pkl", "rb")
+        temp = cPickle._Unpickler(infos_file)
+        temp.encoding = 'latin1'
+        infos = temp.load()
+        temp_ixtoword = infos['vocab']
+        
+        ixtoword = {}
+        ixtoword[0] = '<end>'
+        wordtoix = {}
+        wordtoix['<end>'] = 0
+        ix = 1
+        for word in temp_ixtoword.values():
+            ixtoword[ix] = word
+            wordtoix[word] = ix
+            ix += 1
+        '''
         train_captions_new = []
         for t in train_captions:
             rev = []
@@ -220,11 +268,10 @@ class TextDataset(data.Dataset):
                 ixtoword, wordtoix, len(ixtoword)]
 
     def load_text_data(self, data_dir, split):
-        filepath = os.path.join(data_dir, 'captions_old.pickle')
+        filepath = os.path.join(data_dir, 'captions.pickle')
         train_names = self.load_filenames(data_dir, 'train')
         test_names = self.load_filenames(data_dir, 'test')
         if not os.path.isfile(filepath):
-            #pdb.set_trace()
             train_captions = self.load_captions(data_dir, train_names)
             test_captions = self.load_captions(data_dir, test_names)
 
@@ -255,17 +302,20 @@ class TextDataset(data.Dataset):
     def load_class_id(self, data_dir, total_num):
         if os.path.isfile(data_dir + '/class_info.pickle'):
             with open(data_dir + '/class_info.pickle', 'rb') as f:
-                class_id = pickle.load(f)
+                class_id = pickle.load(f,encoding='latin1')
         else:
             class_id = np.arange(total_num)
         return class_id
 
     def load_filenames(self, data_dir, split):
+        print("Harini logs: Entering in") 
         filepath = '%s/%s/filenames.pickle' % (data_dir, split)
+        print(filepath)
         if os.path.isfile(filepath):
             with open(filepath, 'rb') as f:
                 filenames = pickle.load(f)
             print('Load filenames from: %s (%d)' % (filepath, len(filenames)))
+            print("Harini Logs: ", filenames)
         else:
             filenames = []
         return filenames

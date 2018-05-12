@@ -13,6 +13,7 @@ import torch.utils.data as data
 from torch.autograd import Variable
 import torchvision.transforms as transforms
 
+from six.moves import cPickle
 import os
 import sys
 import numpy as np
@@ -24,7 +25,7 @@ if sys.version_info[0] == 2:
     import cPickle as pickle
 else:
     import pickle
-
+import string
 
 def prepare_data(data):
     imgs, captions, captions_lens, class_ids, keys = data
@@ -113,7 +114,6 @@ class TextDataset(data.Dataset):
             self.bbox = None
         split_dir = os.path.join(data_dir, split)
 
-        pdb.set_trace()
         self.filenames, self.captions, self.ixtoword, \
             self.wordtoix, self.n_words = self.load_text_data(data_dir, split)
 
@@ -156,7 +156,15 @@ class TextDataset(data.Dataset):
             cnt = 0
             
             for cap in captions:
-                tokens = cap.lower().split()
+                #tokenizer = RegexpTokenizer(r'\w+')
+                #tokens = tokenizer.tokenize(cap.lower())
+                if len(cap) == 0:
+                    continue
+                to_remove = string.punctuation
+                table = {ord(char): None for char in to_remove}
+                tokens = cap.lower().translate(table).strip().split()
+                if len(tokens) == 0:
+                    continue
                 tokens_new = []
                 for t in tokens:
                     t = t.encode('ascii', 'ignore').decode('ascii')
@@ -199,14 +207,18 @@ class TextDataset(data.Dataset):
         return all_captions
 
     def build_dictionary(self, train_captions, test_captions):
-        word_counts = defaultdict(float)
+        
+        word_counts = {}
         captions = train_captions + test_captions
         for sent in captions:
             for word in sent:
-                word_counts[word] += 1
+                word_counts[word] = word_counts.get(word, 0) + 1
 
-        pdb.set_trace()
-        vocab = [w for w in word_counts if word_counts[w] > 5]
+        #pdb.set_trace()
+        #vocab = [w for w in word_counts if word_counts[w] > 5]
+        vocab = [w for w,n in word_counts.items() if n > 5]
+        vocab.append('UNK')
+        
 
         ixtoword = {}
         ixtoword[0] = '<end>'
@@ -217,7 +229,23 @@ class TextDataset(data.Dataset):
             wordtoix[w] = ix
             ixtoword[ix] = w
             ix += 1
-
+        '''
+        infos_file = open("../../ImageCaptioning.pytorch/infos_td-best.pkl", "rb")
+        temp = cPickle._Unpickler(infos_file)
+        temp.encoding = 'latin1'
+        infos = temp.load()
+        temp_ixtoword = infos['vocab']
+        
+        ixtoword = {}
+        ixtoword[0] = '<end>'
+        wordtoix = {}
+        wordtoix['<end>'] = 0
+        ix = 1
+        for word in temp_ixtoword.values():
+            ixtoword[ix] = word
+            wordtoix[word] = ix
+            ix += 1
+        '''
         train_captions_new = []
         for t in train_captions:
             rev = []
@@ -244,7 +272,6 @@ class TextDataset(data.Dataset):
         train_names = self.load_filenames(data_dir, 'train')
         test_names = self.load_filenames(data_dir, 'test')
         if not os.path.isfile(filepath):
-            pdb.set_trace()
             train_captions = self.load_captions(data_dir, train_names)
             test_captions = self.load_captions(data_dir, test_names)
 

@@ -178,30 +178,13 @@ def discriminator_lossWGAN(netD, real_imgs, fake_imgs, conditions,
     cond_wrong_errD = torch.mean(cond_wrong_logits)
 
     #------------Wasserstein Loss---------------#
-    wgan_loss = cond_fake_errD - cond_real_errD
+    #wgan_loss = (cond_fake_errD + cond_wrong_errD)/2 - cond_real_errD
     
 
-    #-----------Gradient Penalty---------------#
-    penalty_weight = 20
-    xreal = real_imgs
-    xfake = fake_imgs
-    # Random linear combination of xreal and xfake
-    alpha = Variable(torch.rand(xreal.size(0), 1, 1, 1, out=xreal.data.new()))
-    xmix = (alpha * xreal) + ((1. - alpha) * xfake)
-    # Run discriminator on the combination
-    ymix = netD(xmix.detach())
-    # Calculate gradient of output w.r.t. input
-    ysum = ymix.sum()
-    grads = torch.autograd.grad(ysum, [xmix], create_graph = True, retain_graph=True)[0]
-    gradnorm = torch.sqrt((grads * grads).sum(3).sum(2).sum(1))
-    graddiff = gradnorm - 1
-    gradpenalty = (graddiff * graddiff).mean() * penalty_weight
- 
-    loss = wgan_loss + gradpenalty
 
-    return loss
+    #loss = wgan_loss + gradpenalty
 
-    '''
+
     if netD.UNCOND_DNET is not None:
         real_logits = netD.UNCOND_DNET(real_features)
         fake_logits = netD.UNCOND_DNET(fake_features)
@@ -211,8 +194,31 @@ def discriminator_lossWGAN(netD, real_imgs, fake_imgs, conditions,
                 (fake_errD + cond_fake_errD + cond_wrong_errD) / 3.)
     else:
         errD = cond_real_errD + (cond_fake_errD + cond_wrong_errD) / 2.
-    return errD
-    '''
+
+    #-----------Gradient Penalty---------------#
+    penalty_weight = 0.9
+    xreal = netD(real_imgs)
+    xfake = netD(fake_imgs.detach())
+    # Random linear combination of xreal and xfake
+    alpha = Variable(torch.rand(xreal.size(0), 1, 1, 1, out=xreal.data.new()))
+    xmix = (alpha * xreal) + ((1. - alpha) * xfake)
+    # Run discriminator on the combination
+    cond_ymix = netD.COND_DNET(xmix, conditions)
+    ymix = netD.UNCOND_DNET(xmix)
+    # Calculate gradient of output w.r.t. input
+    cond_ysum = cond_ymix.sum()
+    ysum = ymix.sum()
+    cond_grads = torch.autograd.grad(cond_ysum, [xmix], create_graph = True)[0]
+    grads = torch.autograd.grad(ysum, [xmix], create_graph = True)[0]
+    gradnorm = torch.sqrt((grads * grads).sum(3).sum(2).sum(1))
+    graddiff = gradnorm - 1
+    gradpenalty = (graddiff * graddiff).mean() * penalty_weight
+    cond_gradnorm = torch.sqrt((cond_grads * cond_grads).sum(3).sum(2).sum(1))
+    cond_graddiff = cond_gradnorm - 1
+    cond_gradpenalty = (cond_graddiff * cond_graddiff).mean() * penalty_weight 
+    loss = errD + gradpenalty + cond_gradpenalty
+
+    return loss
 
 
 def generator_loss(netsD, image_encoder, fake_imgs, real_labels,
@@ -226,10 +232,10 @@ def generator_loss(netsD, image_encoder, fake_imgs, real_labels,
     for i in range(numDs):
         features = netsD[i](fake_imgs[i])
         cond_logits = netsD[i].COND_DNET(features, sent_emb)
-        cond_errG = nn.BCELoss()(cond_logits, real_labels)
+        cond_errG = nn.BCEWithLogitsLoss()(cond_logits, real_labels)
         if netsD[i].UNCOND_DNET is  not None:
             logits = netsD[i].UNCOND_DNET(features)
-            errG = nn.BCELoss()(logits, real_labels)
+            errG = nn.BCEWithLogitsLoss()(logits, real_labels)
             g_loss = errG + cond_errG
         else:
             g_loss = cond_errG
