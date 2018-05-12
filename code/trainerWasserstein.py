@@ -10,21 +10,20 @@ import torch.backends.cudnn as cudnn
 from PIL import Image
 import skimage
 import skimage.io
-import eval_utils
+#import eval_utils
 
 from miscc.config import cfg
 from miscc.utils import mkdir_p
 from miscc.utils import build_super_images, build_super_images2
 from miscc.utils import weights_init, load_params, copy_G_params
 from model import G_DCGAN, G_NET
-from datasets import prepare_data
+from datasetsWGAN import prepare_data
 from model import RNN_ENCODER, CNN_ENCODER
 from resnet_utils import myResnet
-import caption_models
+#import caption_models
 from resnet import ResNet, Bottleneck
 
 from torchvision import transforms as trn
-import pdb
 
 from miscc.losses import words_loss
 from miscc.losses import discriminator_loss, generator_loss, KL_loss, discriminator_lossWGAN, generator_lossWGAN
@@ -202,8 +201,9 @@ class condGANTrainer(object):
                                    attn_maps, att_sze, lr_imgs=lr_img)
             if img_set is not None:
                 im = Image.fromarray(img_set)
-                fullpath = '%s/G_%s_%d_%d.png'\
+                fullpath = '%s/G_%s_%d_%d_Vanilla.png'\
                     % (self.image_dir, name, gen_iterations, i)
+                print(fullpath)
                 im.save(fullpath)
 
         # for i in range(len(netsD)):
@@ -220,7 +220,7 @@ class condGANTrainer(object):
                                captions, self.ixtoword, att_maps, att_sze)
         if img_set is not None:
             im = Image.fromarray(img_set)
-            fullpath = '%s/D_%s_%d.png'\
+            fullpath = '%s/D_%s_%d_Vanilla.png'\
                 % (self.image_dir, name, gen_iterations)
             im.save(fullpath)
 
@@ -275,7 +275,7 @@ class condGANTrainer(object):
                 ######################################################
                 noise.data.normal_(0, 1)
                 fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask)
-
+                '''
                 #######################################################
 	        # (3) Generate captions for fake images
 	        #######################################################
@@ -315,7 +315,7 @@ class condGANTrainer(object):
                 pdb.set_trace()
                 caption_loss = eval_utils.custom_eval_split(data)
                 print("Caption loss: ", caption_loss)
-                
+                '''
                 #######################################################
                 # (4) Update D network
                 ######################################################
@@ -359,7 +359,7 @@ class condGANTrainer(object):
                     avg_p.mul_(0.999).add_(0.001, p.data)
 
                 if gen_iterations % 100 == 0:
-                    print(D_logs + '\n' + G_logs)
+                    print(str(gen_iterations) + "/" + str(self.num_batches) + D_logs + '\n' + G_logs)
                 # save images
                 if gen_iterations % 1000 == 0:
                     backup_para = copy_G_params(netG)

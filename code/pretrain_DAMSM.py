@@ -8,6 +8,7 @@ from miscc.config import cfg, cfg_from_file
 from datasets import TextDataset
 from datasets import prepare_data
 
+import pdb
 from model import RNN_ENCODER, CNN_ENCODER
 
 import os
@@ -57,10 +58,10 @@ def train(dataloader, cnn_model, rnn_model, batch_size,
     count = (epoch + 1) * len(dataloader)
     start_time = time.time()
     for step, data in enumerate(dataloader, 0):
-        # print('step', step)
+        print('step', step)
         rnn_model.zero_grad()
         cnn_model.zero_grad()
-
+        
         imgs, captions, cap_lens, \
             class_ids, keys = prepare_data(data)
 
@@ -75,6 +76,7 @@ def train(dataloader, cnn_model, rnn_model, batch_size,
         hidden = rnn_model.init_hidden(batch_size)
         # words_emb: batch_size x nef x seq_len
         # sent_emb: batch_size x nef
+        #pdb.set_trace()
         words_emb, sent_emb = rnn_model(captions, cap_lens, hidden)
 
         w_loss0, w_loss1, attn_maps = words_loss(words_features, words_emb, labels,
@@ -120,13 +122,15 @@ def train(dataloader, cnn_model, rnn_model, batch_size,
             w_total_loss1 = 0
             start_time = time.time()
             # attention Maps
-            img_set, _ = \
-                build_super_images(imgs[-1].cpu(), captions,
+            if epoch % 10 == 9:
+                print("Saving attention maps..")
+                img_set, _ = \
+                    build_super_images(imgs[-1].cpu(), captions,
                                    ixtoword, attn_maps, att_sze)
-            if img_set is not None:
-                im = Image.fromarray(img_set)
-                fullpath = '%s/attention_maps%d.png' % (image_dir, step)
-                im.save(fullpath)
+                if img_set is not None:
+                    im = Image.fromarray(img_set)
+                    fullpath = '%s/attention_maps%d.png' % (image_dir, step)
+                    im.save(fullpath)
     return count
 
 

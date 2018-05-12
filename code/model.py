@@ -8,6 +8,8 @@ import torch.nn.functional as F
 
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
+import pdb
+
 from miscc.config import cfg
 from GlobalAttention import GlobalAttentionGeneral as ATT_NET
 
@@ -168,11 +170,12 @@ class CNN_ENCODER(nn.Module):
             self.nef = 256  # define a uniform ranker
 
         model = models.inception_v3()
-        url = 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth'
-        model.load_state_dict(model_zoo.load_url(url))
+        #url = 'https://download.pytorch.org/models/inception_v3_google-1a9a5a14.pth'
+        state_dict = torch.load('inception_v3_google-1a9a5a14.pth')
+        model.load_state_dict(state_dict)
         for param in model.parameters():
             param.requires_grad = False
-        print('Load pretrained model from ', url)
+        #print('Load pretrained model from ', url)
         # print(model)
 
         self.define_module(model)

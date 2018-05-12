@@ -10,21 +10,20 @@ import torch.backends.cudnn as cudnn
 from PIL import Image
 import skimage
 import skimage.io
-import eval_utils
+#import eval_utils
 
 from miscc.config import cfg
 from miscc.utils import mkdir_p
 from miscc.utils import build_super_images, build_super_images2
 from miscc.utils import weights_init, load_params, copy_G_params
 from model import G_DCGAN, G_NET
-from datasets import prepare_data
+from datasetsWGAN import prepare_data
 from model import RNN_ENCODER, CNN_ENCODER
 from resnet_utils import myResnet
-import caption_models
+#import caption_models
 from resnet import ResNet, Bottleneck
 
 from torchvision import transforms as trn
-import pdb
 
 from miscc.losses import words_loss
 from miscc.losses import discriminator_loss, generator_loss, KL_loss, discriminator_lossWGAN, generator_lossWGAN
@@ -218,6 +217,7 @@ class condGANTrainer(object):
         img_set, _ = \
             build_super_images(fake_imgs[i].detach().cpu(),
                                captions, self.ixtoword, att_maps, att_sze)
+        print("img_set", fullpath)
         if img_set is not None:
             im = Image.fromarray(img_set)
             fullpath = '%s/D_%s_%d.png'\
@@ -275,7 +275,7 @@ class condGANTrainer(object):
                 ######################################################
                 noise.data.normal_(0, 1)
                 fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask)
-
+                '''
                 #######################################################
 	        # (3) Generate captions for fake images
 	        #######################################################
@@ -315,7 +315,7 @@ class condGANTrainer(object):
                 pdb.set_trace()
                 caption_loss = eval_utils.custom_eval_split(data)
                 print("Caption loss: ", caption_loss)
-                
+                '''
                 #######################################################
                 # (4) Update D network
                 ######################################################
@@ -323,7 +323,7 @@ class condGANTrainer(object):
                 D_logs = ''
                 for i in range(len(netsD)):
                     netsD[i].zero_grad()
-                    errD = discriminator_loss(netsD[i], imgs[i], fake_imgs[i],
+                    errD = discriminator_lossWGAN(netsD[i], imgs[i], fake_imgs[i],
                                               sent_emb, real_labels, fake_labels)
                     # backward and update parameters
                     errD.backward()
@@ -346,22 +346,22 @@ class condGANTrainer(object):
                 errG_total, G_logs = \
                     generator_loss(netsD, image_encoder, fake_imgs, real_labels,
                                    words_embs, sent_emb, match_labels, cap_lens, class_ids)
-                kl_loss = KL_loss(mu, logvar)
-                errG_total += kl_loss
-                G_logs += 'kl_loss: %.2f ' % kl_loss.data[0]
-#                wgan_loss, logs = generator_loss(netsD, fake_imgs)
-#                errG_total += wgan_loss
-#                G_logs += 'wgan_loss: %.2f ' % wgan_loss.data[0]
+                #kl_loss = KL_loss(mu, logvar)
+                #errG_total += kl_loss
+                #G_logs += 'kl_loss: %.2f ' % kl_loss.data[0]
+                wgan_loss, logs = generator_lossWGAN(netsD, fake_imgs)
+                errG_total += wgan_loss
+                G_logs += 'wgan_loss: %.2f ' % wgan_loss.data[0]
                 # backward and update parameters
                 errG_total.backward()
                 optimizerG.step()
                 for p, avg_p in zip(netG.parameters(), avg_param_G):
                     avg_p.mul_(0.999).add_(0.001, p.data)
 
-                if gen_iterations % 100 == 0:
-                    print(D_logs + '\n' + G_logs)
+                if gen_iterations % 1 == 0:
+                    print(str(gen_iterations) + "/" + str(self.num_batches) + D_logs + '\n' + G_logs)
                 # save images
-                if gen_iterations % 1000 == 0:
+                if gen_iterations % 1 == 0:
                     backup_para = copy_G_params(netG)
                     load_params(netG, avg_param_G)
                     self.save_img_results(netG, fixed_noise, sent_emb,
