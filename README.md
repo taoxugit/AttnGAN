@@ -7,9 +7,9 @@ with Attentional Generative Adversarial Networks](http://openaccess.thecvf.com/c
 
 
 ### Dependencies
-python 2.7
+python 3.6+
 
-Pytorch
+Pytorch 1.0+
 
 In addition, please add the project folder to PYTHONPATH and `pip install` the following packages:
 - `python-dateutil`
