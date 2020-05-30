@@ -16,6 +16,7 @@ from miscc.utils import weights_init, load_params, copy_G_params
 from model import G_DCGAN, G_NET
 from datasets import prepare_data
 from model import RNN_ENCODER, CNN_ENCODER
+from model_zls_gan import ZLS_GAN_ENCODER
 
 from miscc.losses import words_loss
 from miscc.losses import discriminator_loss, generator_loss, KL_loss
@@ -72,6 +73,16 @@ class condGANTrainer(object):
         print('Load text encoder from:', cfg.TRAIN.NET_E)
         text_encoder.eval()
 
+        zsl_gan_text_encoder = ZLS_GAN_ENCODER()
+        zls_gan_saved_data = torch.load(cfg.TRAIN.ZLS_GAN)
+        state_dict = zls_gan_saved_data['state_dict_G']
+#         zsl_gan_text_encoder.double()
+        zsl_gan_text_encoder.load_state_dict(state_dict)
+        for p in zsl_gan_text_encoder.parameters():
+            p.requires_grad = False
+        print('Load text encoder from:', cfg.TRAIN.ZLS_GAN)
+        zsl_gan_text_encoder.eval()
+
         # #######################generator and discriminators############## #
         netsD = []
         if cfg.GAN.B_DCGAN:
@@ -123,11 +134,12 @@ class condGANTrainer(object):
         # ########################################################### #
         if cfg.CUDA:
             text_encoder = text_encoder.cuda()
+            zsl_gan_text_encoder = zsl_gan_text_encoder.cuda()
             image_encoder = image_encoder.cuda()
             netG.cuda()
             for i in range(len(netsD)):
                 netsD[i].cuda()
-        return [text_encoder, image_encoder, netG, netsD, epoch]
+        return [text_encoder, zsl_gan_text_encoder, image_encoder, netG, netsD, epoch]
 
     def define_optimizers(self, netG, netsD):
         optimizersD = []
@@ -216,7 +228,7 @@ class condGANTrainer(object):
             im.save(fullpath)
 
     def train(self):
-        text_encoder, image_encoder, netG, netsD, start_epoch = self.build_models()
+        text_encoder, zsl_gan_text_encoder, image_encoder, netG, netsD, start_epoch = self.build_models()
         avg_param_G = copy_G_params(netG)
         optimizerG, optimizersD = self.define_optimizers(netG, netsD)
         real_labels, fake_labels, match_labels = self.prepare_labels()
@@ -243,13 +255,18 @@ class condGANTrainer(object):
                 # (1) Prepare training data and Compute text embeddings
                 ######################################################
                 data = data_iter.next()
-                imgs, captions, cap_lens, class_ids, keys = prepare_data(data)
+                imgs, captions, tfidfs, cap_lens, class_ids, keys = prepare_data(data)
 
                 hidden = text_encoder.init_hidden(batch_size)
                 # words_embs: batch_size x nef x seq_len
                 # sent_emb: batch_size x nef
                 words_embs, sent_emb = text_encoder(captions, cap_lens, hidden)
-                words_embs, sent_emb = words_embs.detach(), sent_emb.detach()
+                z = Variable(torch.randn(batch_size, cfg.GAN.Z_DIM_ZLS_GAN))
+                if cfg.CUDA:
+                    z = z.cuda()
+                sent_emb_zsl_gan = zsl_gan_text_encoder(z, tfidfs)
+                words_embs, sent_emb, sent_emb_zsl_gan = \
+                    words_embs.detach(), sent_emb.detach(), sent_emb_zsl_gan.detach()
                 mask = (captions == 0)
                 num_words = words_embs.size(2)
                 if mask.size(1) > num_words:
@@ -259,7 +276,7 @@ class condGANTrainer(object):
                 # (2) Generate fake images
                 ######################################################
                 noise.data.normal_(0, 1)
-                fake_imgs, _, mu, logvar = netG(noise, sent_emb, words_embs, mask)
+                fake_imgs, _, mu, logvar = netG(noise, sent_emb_zsl_gan, words_embs, mask)
 
                 #######################################################
                 # (3) Update D network

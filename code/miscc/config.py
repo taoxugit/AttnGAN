@@ -37,6 +37,7 @@ __C.TRAIN.RNN_GRAD_CLIP = 0.25
 __C.TRAIN.FLAG = True
 __C.TRAIN.NET_E = ''
 __C.TRAIN.NET_G = ''
+__C.TRAIN.ZLS_GAN = ''
 __C.TRAIN.B_NET_D = True
 
 __C.TRAIN.SMOOTH = edict()
@@ -51,6 +52,7 @@ __C.GAN = edict()
 __C.GAN.DF_DIM = 64
 __C.GAN.GF_DIM = 128
 __C.GAN.Z_DIM = 100
+__C.GAN.Z_DIM_ZLS_GAN = 100
 __C.GAN.CONDITION_DIM = 100
 __C.GAN.R_NUM = 2
 __C.GAN.B_ATTENTION = True
@@ -58,9 +60,12 @@ __C.GAN.B_DCGAN = False
 
 
 __C.TEXT = edict()
+__C.TEXT.TFIDF_VECTORIZER_PATH = ''
 __C.TEXT.CAPTIONS_PER_IMAGE = 10
 __C.TEXT.EMBEDDING_DIM = 256
+__C.TEXT.ZLS_GAN_EMBEDDING_DIM = 3584
 __C.TEXT.WORDS_NUM = 18
+__C.TEXT.TFIDF_DIM = 7549
 
 
 def _merge_a_into_b(a, b):

@@ -3,7 +3,7 @@ CONFIG_NAME: 'DAMSM'
 DATASET_NAME: 'birds'
 DATA_DIR: '../data/birds'
 GPU_ID: 0
-WORKERS: 1
+WORKERS: 4
 
 
 TREE:

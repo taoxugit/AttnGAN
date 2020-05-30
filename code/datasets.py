@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 from nltk.tokenize import RegexpTokenizer
 from collections import defaultdict
 from miscc.config import cfg
+from text_processor import TextProcessor
 
 import torch
 import torch.utils.data as data
@@ -26,7 +27,7 @@ else:
 
 
 def prepare_data(data):
-    imgs, captions, captions_lens, class_ids, keys = data
+    imgs, captions, tfidfs, captions_lens, class_ids, keys = data
 
     # sort data by the length in a decreasing order
     sorted_cap_lens, sorted_cap_indices = \
@@ -41,18 +42,21 @@ def prepare_data(data):
             real_imgs.append(Variable(imgs[i]))
 
     captions = captions[sorted_cap_indices].squeeze()
+    tfidfs = tfidfs[sorted_cap_indices]
     class_ids = class_ids[sorted_cap_indices].numpy()
     # sent_indices = sent_indices[sorted_cap_indices]
     keys = [keys[i] for i in sorted_cap_indices.numpy()]
     # print('keys', type(keys), keys[-1])  # list
     if cfg.CUDA:
         captions = Variable(captions).cuda()
+        tfidfs = Variable(tfidfs).cuda()
         sorted_cap_lens = Variable(sorted_cap_lens).cuda()
     else:
         captions = Variable(captions)
+        tfidfs = Variable(tfidfs)
         sorted_cap_lens = Variable(sorted_cap_lens)
 
-    return [real_imgs, captions, sorted_cap_lens,
+    return [real_imgs, captions, tfidfs, sorted_cap_lens,
             class_ids, keys]
 
 
@@ -111,6 +115,8 @@ class TextDataset(data.Dataset):
         else:
             self.bbox = None
         split_dir = os.path.join(data_dir, split)
+
+        self.text_processor = TextProcessor(cfg.TEXT.TFIDF_VECTORIZER_PATH)
 
         self.filenames, self.captions, self.ixtoword, \
             self.wordtoix, self.n_words = self.load_text_data(data_dir, split)
@@ -286,6 +292,12 @@ class TextDataset(data.Dataset):
             x_len = cfg.TEXT.WORDS_NUM
         return x, x_len
 
+    def get_tfidf(self, sent_ix):
+        sent_caption = np.asarray(self.captions[sent_ix]).astype('int64')
+        sent = ' '.join([self.ixtoword.get(word_id) for word_id in sent_caption])
+        processed_sent = self.text_processor.preprocess_text(sent)
+        return self.text_processor.get_tfidf(processed_sent)
+
     def __getitem__(self, index):
         #
         key = self.filenames[index]
@@ -305,7 +317,8 @@ class TextDataset(data.Dataset):
         sent_ix = random.randint(0, self.embeddings_num)
         new_sent_ix = index * self.embeddings_num + sent_ix
         caps, cap_len = self.get_caption(new_sent_ix)
-        return imgs, caps, cap_len, cls_id, key
+        tfidf = self.get_tfidf(new_sent_ix).astype(np.float32)
+        return imgs, caps, tfidf, cap_len, cls_id, key
 
 
     def __len__(self):
