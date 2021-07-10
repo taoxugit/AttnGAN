@@ -1,7 +1,9 @@
 Flask
 python-dateutil
 easydict
+future 
 scikit-image
-azure-storage-blob
+azure-storage-blob==2.1.0
+werkzeug==0.16.0
 applicationinsights
 libmc
