@@ -1,7 +1,7 @@
 CONFIG_NAME: 'attn2'
 
 DATASET_NAME: 'birds'
-DATA_DIR: '../data/birds'
+DATA_DIR: '/content/drive/MyDrive/AttnGAN/data/birds'
 GPU_ID: 3
 WORKERS: 1
 
@@ -12,10 +12,10 @@ TREE:
 
 TRAIN:
     FLAG: False
-    NET_G: '../models/bird_AttnGAN2.pth'
+    NET_G: '/content/drive/MyDrive/AttnGAN/models/bird_AttnGAN2.pth'
     B_NET_D: False
     BATCH_SIZE: 100
-    NET_E: '../DAMSMencoders/bird/text_encoder200.pth'
+    NET_E: '/content/drive/MyDrive/AttnGAN/DAMSMencoders/bird/text_encoder200.pth'
 
 
 GAN:

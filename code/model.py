@@ -409,9 +409,9 @@ class GET_IMAGE_G(nn.Module):
 class G_NET(nn.Module):
     def __init__(self):
         super(G_NET, self).__init__()
-        ngf = cfg.GAN.GF_DIM
-        nef = cfg.TEXT.EMBEDDING_DIM
-        ncf = cfg.GAN.CONDITION_DIM
+        ngf = cfg.GAN.GF_DIM #32
+        nef = cfg.TEXT.EMBEDDING_DIM #256
+        ncf = cfg.GAN.CONDITION_DIM # 100
         self.ca_net = CA_NET()
 
         if cfg.TREE.BRANCH_NUM > 0:
