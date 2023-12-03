@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-
 from nltk.tokenize import RegexpTokenizer
 from collections import defaultdict
 from miscc.config import cfg
@@ -12,6 +11,10 @@ import torch
 import torch.utils.data as data
 from torch.autograd import Variable
 import torchvision.transforms as transforms
+
+import os
+import shutil
+from sklearn.model_selection import train_test_split
 
 import os
 import sys
@@ -263,8 +266,25 @@ class TextDataset(data.Dataset):
                 filenames = pickle.load(f)
             print('Load filenames from: %s (%d)' % (filepath, len(filenames)))
         else:
-            filenames = []
+            image_dir = os.path.join(data_dir, 'images')
+            text_dir = os.path.join(data_dir, 'text')
+
+            image_files = os.listdir(image_dir)
+            text_files = os.listdir(text_dir)
+
+            image_train, image_test = train_test_split(image_files, test_size=0.3, random_state=42)
+            text_train, text_test = train_test_split(text_files, test_size=0.3, random_state=42)
+
+            if split == 'train':
+                filenames = image_train
+            else:
+                filenames = image_test 
+
+            with open(filepath, 'wb') as f:
+                pickle.dump(filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
+
         return filenames
+
 
     def get_caption(self, sent_ix):
         # a list of indices for a sentence
