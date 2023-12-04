@@ -302,7 +302,10 @@ class TextDataset(data.Dataset):
             else:
                 filenames = image_test 
 
-            with open(filepath, 'wb') as f:
+            with open('%s/%s/filenames.pickle' % (data_dir, "train"), 'wb') as f:
+                pickle.dump(filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            with open('%s/%s/filenames.pickle' % (data_dir, "test"), 'wb') as f:
                 pickle.dump(filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
 
         return filenames
