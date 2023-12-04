@@ -145,10 +145,10 @@ class TextDataset(data.Dataset):
         #
         return filename_bbox
 
-    def load_captions(self, data_dir, filenames:list[str]):
+    def load_captions(self, data_dir, filenames:list[str], split):
         all_captions = []
         for i in range(len(filenames)):
-            cap_path = '%s/text/%s.txt' % (data_dir, filenames[i].removesuffix('.jpg'))
+            cap_path = '%s/%s/text/%s.txt' % (data_dir, split, filenames[i].removesuffix('.jpg'))
             with open(cap_path, "r") as f:
                 captions = f.read().decode('utf8').split('\n')
                 cnt = 0
@@ -224,8 +224,8 @@ class TextDataset(data.Dataset):
         train_names = self.load_filenames(data_dir, 'train')
         test_names = self.load_filenames(data_dir, 'test')
         if not os.path.isfile(filepath):
-            train_captions = self.load_captions(data_dir, train_names)
-            test_captions = self.load_captions(data_dir, test_names)
+            train_captions = self.load_captions(data_dir, train_names, "train")
+            test_captions = self.load_captions(data_dir, test_names, "test")
 
             train_captions, test_captions, ixtoword, wordtoix, n_words = \
                 self.build_dictionary(train_captions, test_captions)
@@ -296,6 +296,9 @@ class TextDataset(data.Dataset):
 
             for file in text_test:
                 shutil.move(os.path.join(text_dir, file), test_text_dir)
+                
+            os.rmdir(image_dir)
+            os.rmdir(text_dir)
 
             if split == 'train':
                 filenames = image_train
@@ -308,7 +311,7 @@ class TextDataset(data.Dataset):
             with open('%s/%s/filenames.pickle' % (data_dir, "test"), 'wb') as f:
                 pickle.dump(filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
                 
-        print('Create pickle and Load filenames from: %s (%d)' % (filepath, len(filenames)))
+            print('Create pickle and Load filenames from: %s (%d)' % (filepath, len(filenames)))
 
         return filenames
 
