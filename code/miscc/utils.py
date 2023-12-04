@@ -9,7 +9,6 @@ import torch.nn as nn
 from PIL import Image, ImageDraw, ImageFont
 from copy import deepcopy
 import skimage.transform
-from matplotlib import cm
 
 from miscc.config import cfg
 
@@ -144,13 +143,9 @@ def build_super_images(real_imgs, captions, ixtoword,
                 one_map = row_beforeNorm[j]
                 one_map = (one_map - minVglobal) / (maxVglobal - minVglobal)
                 one_map *= 255
-                # Assuming 'one_map' is your 3D array
-                one_map_normalized = one_map / one_map.max()
-                one_map_colored = cm.jet(one_map_normalized)
-
-                # Convert the colored array to a PIL Image
-                PIL_att = Image.fromarray(np.uint8(one_map_colored * 255))
+                #
                 PIL_im = Image.fromarray(np.uint8(img))
+                PIL_att = Image.fromarray(np.uint8(one_map))
                 merged = \
                     Image.new('RGBA', (vis_size, vis_size), (0, 0, 0, 0))
                 mask = Image.new('L', (vis_size, vis_size), (210))
@@ -236,7 +231,8 @@ def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
                 one_map = \
                     skimage.transform.pyramid_expand(one_map, sigma=20,
                                                      upscale=vis_size // att_sze,
-                                                     multichannel=True)
+                                                     multichannel=False)
+
             minV = one_map.min()
             maxV = one_map.max()
             one_map = (one_map - minV) / (maxV - minV)
