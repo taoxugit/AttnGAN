@@ -148,11 +148,12 @@ class TextDataset(data.Dataset):
     def load_captions(self, data_dir, filenames:list[str], split):
         all_captions = []
         for i in range(len(filenames)):
-            cap_path = '%s/%s/text/%s.txt' % (data_dir, split, filenames[i].removesuffix('.jpg'))
+            cap_path = '%s/%s/text/%s.txt' % (data_dir, split, filenames[i])
             with open(cap_path, "r") as f:
                 captions = f.read().split('\n')
                 cnt = 0
                 for cap in captions:
+                    print(cap)
                     if len(cap) == 0:
                         continue
                     cap = cap.replace("\ufffd\ufffd", " ")
@@ -175,8 +176,8 @@ class TextDataset(data.Dataset):
                     if cnt == self.embeddings_num:
                         break
                 if cnt < self.embeddings_num:
-                    print('ERROR: the captions for %s less than %d'
-                          % (filenames[i], cnt))
+                    # print('ERROR: the captions for %s less than %d'
+                    #       % (filenames[i], cnt))
         return all_captions
 
     def build_dictionary(self, train_captions, test_captions):
@@ -321,8 +322,6 @@ class TextDataset(data.Dataset):
                 return train_filenames
             else:
                 return test_filenames 
-
-
 
     def get_caption(self, sent_ix):
         # a list of indices for a sentence
