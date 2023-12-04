@@ -104,15 +104,22 @@ def build_super_images(real_imgs, captions, ixtoword,
     bUpdate = 1
     for i in range(num):
         attn = attn_maps[i].cpu().view(1, -1, att_sze, att_sze)
-        # --> 1 x 1 x 17 x 17
         print("attn:", attn.shape)
+        # --> 1 x 1 x 17 x 17
         attn_max = attn.max(dim=1, keepdim=True)
         attn = torch.cat([attn_max[0], attn], 1)
+        print("attn:", attn.shape)
+        
         #
         attn = attn.view(-1, 1, att_sze, att_sze)
+        print("attn:", attn.shape)
+        
         attn = attn.repeat(1, 3, 1, 1).data.numpy()
+        print("attn:", attn.shape)
+        
         # n x c x h x w --> n x h x w x c
         attn = np.transpose(attn, (0, 2, 3, 1))
+        print("attn:", attn.shape)
         num_attn = attn.shape[0]
         #
         img = real_imgs[i]
