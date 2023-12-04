@@ -144,6 +144,7 @@ def build_super_images(real_imgs, captions, ixtoword,
                 one_map = (one_map - minVglobal) / (maxVglobal - minVglobal)
                 one_map = (one_map * 255).astype(np.uint8)
                 print(one_map)
+                print(one_map.shape)
                 #
                 PIL_im = Image.fromarray(np.uint8(img))
                 PIL_att = Image.fromarray(one_map)
