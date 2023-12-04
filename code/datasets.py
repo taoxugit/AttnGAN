@@ -145,10 +145,10 @@ class TextDataset(data.Dataset):
         #
         return filename_bbox
 
-    def load_captions(self, data_dir, filenames):
+    def load_captions(self, data_dir, filenames:list[str]):
         all_captions = []
         for i in range(len(filenames)):
-            cap_path = '%s/text/%s.txt' % (data_dir, filenames[i])
+            cap_path = '%s/text/%s.txt' % (data_dir, filenames[i].removesuffix('.jpg'))
             with open(cap_path, "r") as f:
                 captions = f.read().decode('utf8').split('\n')
                 cnt = 0
@@ -307,6 +307,8 @@ class TextDataset(data.Dataset):
 
             with open('%s/%s/filenames.pickle' % (data_dir, "test"), 'wb') as f:
                 pickle.dump(filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
+                
+        print('Create pickle and Load filenames from: %s (%d)' % (filepath, len(filenames)))
 
         return filenames
 
