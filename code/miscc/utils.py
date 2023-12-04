@@ -74,8 +74,7 @@ def build_super_images(real_imgs, captions, ixtoword,
 
 
     real_imgs = \
-        nn.functional.interpolate(real_imgs,size=(vis_size, vis_size),
-                                  mode='bilinear', align_corners=False)
+        nn.Upsample(size=(vis_size, vis_size), mode='bilinear')(real_imgs)
     # [-1, 1] --> [0, 1]
     real_imgs.add_(1).div_(2).mul_(255)
     real_imgs = real_imgs.data.numpy()
@@ -86,8 +85,7 @@ def build_super_images(real_imgs, captions, ixtoword,
     post_pad = np.zeros([pad_sze[1], pad_sze[2], 3])
     if lr_imgs is not None:
         lr_imgs = \
-            nn.functional.interpolate(lr_imgs,size=(vis_size, vis_size),
-                                  mode='bilinear', align_corners=False)
+            nn.Upsample(size=(vis_size, vis_size), mode='bilinear')(lr_imgs)
         # [-1, 1] --> [0, 1]
         lr_imgs.add_(1).div_(2).mul_(255)
         lr_imgs = lr_imgs.data.numpy()
@@ -176,7 +174,6 @@ def build_super_images(real_imgs, captions, ixtoword,
     else:
         return None
 
-
 def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
                         attn_maps, att_sze, vis_size=256, topK=5):
     batch_size = real_imgs.size(0)
@@ -231,7 +228,7 @@ def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
                 one_map = \
                     skimage.transform.pyramid_expand(one_map, sigma=20,
                                                      upscale=vis_size // att_sze,
-                                                     multichannel=False)
+)
 
             minV = one_map.min()
             maxV = one_map.max()
