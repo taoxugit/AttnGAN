@@ -103,7 +103,7 @@ def build_super_images(real_imgs, captions, ixtoword,
 
     bUpdate = 1
     for i in range(num):
-        print("attn:", attn.shape)
+        print("attn:", attn_maps[i].shape)
 
         attn = attn_maps[i].cpu().view(1, -1, att_sze, att_sze)
         print("attn:", attn.shape)
