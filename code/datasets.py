@@ -275,6 +275,28 @@ class TextDataset(data.Dataset):
             image_train, image_test = train_test_split(image_files, test_size=0.3, random_state=42)
             text_train, text_test = train_test_split(text_files, test_size=0.3, random_state=42)
 
+            train_image_dir = os.path.join(data_dir, 'train/images')
+            test_image_dir = os.path.join(data_dir, 'test/images')
+            train_text_dir = os.path.join(data_dir, 'train/text')
+            test_text_dir = os.path.join(data_dir, 'test/text')
+
+            os.makedirs(train_image_dir, exist_ok=True)
+            os.makedirs(test_image_dir, exist_ok=True)
+            os.makedirs(train_text_dir, exist_ok=True)
+            os.makedirs(test_text_dir, exist_ok=True)
+
+            for file in image_train:
+                shutil.move(os.path.join(image_dir, file), train_image_dir)
+
+            for file in image_test:
+                shutil.move(os.path.join(image_dir, file), test_image_dir)
+
+            for file in text_train:
+                shutil.move(os.path.join(text_dir, file), train_text_dir)
+
+            for file in text_test:
+                shutil.move(os.path.join(text_dir, file), test_text_dir)
+
             if split == 'train':
                 filenames = image_train
             else:
