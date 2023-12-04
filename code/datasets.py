@@ -265,18 +265,24 @@ class TextDataset(data.Dataset):
             with open(filepath, 'rb') as f:
                 filenames = pickle.load(f)
             print('Load filenames from: %s (%d)' % (filepath, len(filenames)))
+
+            return filenames
+
         else:
             image_dir = os.path.join(data_dir, 'images')
             text_dir = os.path.join(data_dir, 'text')
 
-            image_files = os.listdir(image_dir)
-            text_files = os.listdir(text_dir)
-            
-            image_files.sort()
-            text_files.sort()
+            image_files = sorted(os.listdir(image_dir))
 
-            image_train, image_test = train_test_split(image_files, test_size=0.3)
-            text_train, text_test = train_test_split(text_files, test_size=0.3)
+            filenames = [os.path.splitext(f)[0] for f in image_files]
+            
+            train_filenames, test_filenames = train_test_split(filenames, test_size=0.3)
+            
+            image_train = [f + '.jpg' for f in train_filenames]
+            text_train = [f + '.txt' for f in train_filenames]
+
+            image_test = [f + '.jpg' for f in test_filenames]
+            text_test = [f + '.txt' for f in test_filenames]
 
             train_image_dir = os.path.join(data_dir, 'train/images')
             test_image_dir = os.path.join(data_dir, 'test/images')
@@ -299,24 +305,23 @@ class TextDataset(data.Dataset):
 
             for file in text_test:
                 shutil.move(os.path.join(text_dir, file), test_text_dir)
-                
+
             os.rmdir(image_dir)
             os.rmdir(text_dir)
 
-            if split == 'train':
-                filenames = image_train
-            else:
-                filenames = image_test 
-
             with open('%s/%s/filenames.pickle' % (data_dir, "train"), 'wb') as f:
-                pickle.dump(filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
+                pickle.dump(train_filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
 
             with open('%s/%s/filenames.pickle' % (data_dir, "test"), 'wb') as f:
-                pickle.dump(filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
-                
+                pickle.dump(test_filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
+
             print('Create pickle and Load filenames from: %s (%d)' % (filepath, len(filenames)))
 
-        return filenames
+            if split == 'train':
+                return train_filenames
+            else:
+                return test_filenames 
+
 
 
     def get_caption(self, sent_ix):
