@@ -102,10 +102,10 @@ def train(dataloader, cnn_model, rnn_model, batch_size,
 
             
             s_cur_loss0 = s_total_loss0.item() / UPDATE_INTERVAL
-            s_cur_loss1 = s_total_loss1[0] / UPDATE_INTERVAL
+            s_cur_loss1 = s_total_loss1.item() / UPDATE_INTERVAL
 
-            w_cur_loss0 = w_total_loss0[0] / UPDATE_INTERVAL
-            w_cur_loss1 = w_total_loss1[0] / UPDATE_INTERVAL
+            w_cur_loss0 = w_total_loss0.item() / UPDATE_INTERVAL
+            w_cur_loss1 = w_total_loss1.item() / UPDATE_INTERVAL
 
             elapsed = time.time() - start_time
             print('| epoch {:3d} | {:5d}/{:5d} batches | ms/batch {:5.2f} | '
