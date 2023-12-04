@@ -153,7 +153,6 @@ class TextDataset(data.Dataset):
                 captions = f.read().split('\n')
                 cnt = 0
                 for cap in captions:
-                    print(cap)
                     if len(cap) == 0:
                         continue
                     cap = cap.replace("\ufffd\ufffd", " ")
@@ -175,9 +174,9 @@ class TextDataset(data.Dataset):
                     cnt += 1
                     if cnt == self.embeddings_num:
                         break
-                # if cnt < self.embeddings_num:
-                    # print('ERROR: the captions for %s less than %d'
-                    #       % (filenames[i], cnt))
+                if cnt < self.embeddings_num:
+                    print('ERROR: the captions for %s less than %d'
+                          % (filenames[i], cnt))
         return all_captions
 
     def build_dictionary(self, train_captions, test_captions):
@@ -355,7 +354,13 @@ class TextDataset(data.Dataset):
             bbox = None
             data_dir = self.data_dir
         #
-        img_name = '%s/images/%s.jpg' % (data_dir, key)
+        img_name = ""
+        if os.path.isfile('%s/%s/images/%s.jpg' % (data_dir, "train", key)):
+            img_name = '%s/%s/images/%s.jpg' % (data_dir, "train", key)
+
+        if os.path.isfile('%s/%s/images/%s.jpg' % (data_dir, "test", key)):
+            img_name = '%s/%s/images/%s.jpg' % (data_dir, "test", key)
+
         imgs = get_imgs(img_name, self.imsize,
                         bbox, self.transform, normalize=self.norm)
         # random select a sentence
