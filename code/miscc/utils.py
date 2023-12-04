@@ -125,14 +125,12 @@ def build_super_images(real_imgs, captions, ixtoword,
         minVglobal, maxVglobal = 1, 0
         for j in range(num_attn):
             one_map = attn[j]
-            print("one_map shape: ", one_map.shape)
             if (vis_size // att_sze) > 1:
                 # one_map = \
                 #     skimage.transform.pyramid_expand(one_map, sigma=20,
                 #                                      upscale=vis_size // att_sze)
                 one_map = skimage.transform.resize(one_map, (vis_size, vis_size), mode='reflect')
             row_beforeNorm.append(one_map)
-            print("one_map new_shape: ", one_map.shape)            
             minV = one_map.min()
             maxV = one_map.max()
             if minVglobal > minV:
