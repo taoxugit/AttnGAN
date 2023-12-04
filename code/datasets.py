@@ -175,7 +175,7 @@ class TextDataset(data.Dataset):
                     cnt += 1
                     if cnt == self.embeddings_num:
                         break
-                if cnt < self.embeddings_num:
+                # if cnt < self.embeddings_num:
                     # print('ERROR: the captions for %s less than %d'
                     #       % (filenames[i], cnt))
         return all_captions
