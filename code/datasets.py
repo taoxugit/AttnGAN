@@ -269,8 +269,11 @@ class TextDataset(data.Dataset):
             image_dir = os.path.join(data_dir, 'images')
             text_dir = os.path.join(data_dir, 'text')
 
-            image_files = os.listdir(image_dir).sort()
-            text_files = os.listdir(text_dir).sort()
+            image_files = os.listdir(image_dir)
+            text_files = os.listdir(text_dir)
+            
+            image_files.sort()
+            text_files.sort()
 
             image_train, image_test = train_test_split(image_files, test_size=0.3)
             text_train, text_test = train_test_split(text_files, test_size=0.3)
