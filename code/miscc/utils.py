@@ -131,7 +131,7 @@ def build_super_images(real_imgs, captions, ixtoword,
                     skimage.transform.pyramid_expand(one_map, sigma=20,
                                                      upscale=vis_size // att_sze)
             row_beforeNorm.append(one_map)
-            print("row_beforeNorm: ", len(row_beforeNorm))
+            print("one_map new_shape: ", one_map.shape)            
             minV = one_map.min()
             maxV = one_map.max()
             if minVglobal > minV:
