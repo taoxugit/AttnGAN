@@ -324,8 +324,10 @@ class TextDataset(data.Dataset):
 
     def get_caption(self, sent_ix):
         # a list of indices for a sentence
-        print(f'Getting caption for sent_ix: {sent_ix}')
-        sent_caption = np.asarray(self.captions[sent_ix]).astype('int64')
+        try:
+            sent_caption = np.asarray(self.captions[sent_ix]).astype('int64')
+        except:
+            print(f'Getting caption for sent_ix: {sent_ix}')
         if (sent_caption == 0).sum() > 0:
             print('ERROR: do not need END (0) token', sent_caption)
         num_words = len(sent_caption)
@@ -367,8 +369,11 @@ class TextDataset(data.Dataset):
         # random select a sentence
         sent_ix = random.randint(0, self.embeddings_num)
         new_sent_ix = index * self.embeddings_num + sent_ix
-        print(f'index: {index}, new_sent_ix: {new_sent_ix}, sent_ix: {sent_ix}, len(self.captions): {len(self.captions)}')
-        caps, cap_len = self.get_caption(new_sent_ix)
+        try:
+            caps, cap_len = self.get_caption(new_sent_ix)
+        except Exception as error:
+            print("error")
+            print(f'index: {index}, new_sent_ix: {new_sent_ix}, sent_ix: {sent_ix}, len(self.captions): {len(self.captions)}')
         return imgs, caps, cap_len, cls_id, key
 
 
