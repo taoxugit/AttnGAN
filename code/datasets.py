@@ -372,8 +372,9 @@ class TextDataset(data.Dataset):
         try:
             caps, cap_len = self.get_caption(new_sent_ix)
         except Exception as error:
-            print("error")
+            print(error)
             print(f'index: {index}, new_sent_ix: {new_sent_ix}, sent_ix: {sent_ix}, len(self.captions): {len(self.captions)}')
+            caps, cap_len = self.get_caption(new_sent_ix-1)
         return imgs, caps, cap_len, cls_id, key
 
 
