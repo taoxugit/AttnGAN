@@ -32,7 +32,6 @@ def drawCaption(convas, captions, ixtoword, vis_size, off1=2, off2=2):
     img_txt = Image.fromarray(convas)
     # get a font
     # fnt = None  # ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 50)
-    fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 50)
     # get a drawing context
     d = ImageDraw.Draw(img_txt)
     sentence_list = []
@@ -44,7 +43,7 @@ def drawCaption(convas, captions, ixtoword, vis_size, off1=2, off2=2):
                 break
             word = ixtoword[cap[j]].encode('ascii', 'ignore').decode('ascii')
             d.text(((j + off1) * (vis_size + off2), i * FONT_MAX), '%d:%s' % (j, word[:6]),
-                   font=fnt, fill=(255, 255, 255, 255))
+                     fill=(255, 255, 255, 255))
             sentence.append(word)
         sentence_list.append(sentence)
     return img_txt, sentence_list
@@ -127,9 +126,10 @@ def build_super_images(real_imgs, captions, ixtoword,
         for j in range(num_attn):
             one_map = attn[j]
             if (vis_size // att_sze) > 1:
-                one_map = \
-                    skimage.transform.pyramid_expand(one_map, sigma=20,
-                                                     upscale=vis_size // att_sze)
+                # one_map = \
+                #     skimage.transform.pyramid_expand(one_map, sigma=20,
+                #                                      upscale=vis_size // att_sze)
+                one_map = skimage.transform.resize(one_map, (vis_size, vis_size), mode='reflect')
             row_beforeNorm.append(one_map)
             minV = one_map.min()
             maxV = one_map.max()
@@ -175,7 +175,6 @@ def build_super_images(real_imgs, captions, ixtoword,
     else:
         return None
 
-
 def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
                         attn_maps, att_sze, vis_size=256, topK=5):
     batch_size = real_imgs.size(0)
@@ -185,7 +184,8 @@ def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
                            dtype=np.uint8)
 
     real_imgs = \
-        nn.Upsample(size=(vis_size, vis_size), mode='bilinear')(real_imgs)
+        nn.functional.interpolate(real_imgs,size=(vis_size, vis_size),
+                                    mode='bilinear', align_corners=False)
     # [-1, 1] --> [0, 1]
     real_imgs.add_(1).div_(2).mul_(255)
     real_imgs = real_imgs.data.numpy()
@@ -228,7 +228,9 @@ def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
             if (vis_size // att_sze) > 1:
                 one_map = \
                     skimage.transform.pyramid_expand(one_map, sigma=20,
-                                                     upscale=vis_size // att_sze)
+                                                     upscale=vis_size // att_sze,
+)
+
             minV = one_map.min()
             maxV = one_map.max()
             one_map = (one_map - minV) / (maxV - minV)
@@ -286,12 +288,12 @@ def build_super_images2(real_imgs, captions, cap_lens, ixtoword,
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:
-        nn.init.orthogonal(m.weight.data, 1.0)
+        nn.init.orthogonal_(m.weight.data, 1.0)
     elif classname.find('BatchNorm') != -1:
         m.weight.data.normal_(1.0, 0.02)
         m.bias.data.fill_(0)
     elif classname.find('Linear') != -1:
-        nn.init.orthogonal(m.weight.data, 1.0)
+        nn.init.orthogonal_(m.weight.data, 1.0)
         if m.bias is not None:
             m.bias.data.fill_(0.0)
 

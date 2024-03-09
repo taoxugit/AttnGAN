@@ -104,7 +104,7 @@ class GlobalAttentionGeneral(nn.Module):
         attn = attn.view(batch_size*queryL, sourceL)
         if self.mask is not None:
             # batch_size x sourceL --> batch_size*queryL x sourceL
-            mask = self.mask.repeat(queryL, 1)
+            mask = self.mask.repeat(queryL, 1).to(torch.bool)
             attn.data.masked_fill_(mask.data, -float('inf'))
         attn = self.sm(attn)  # Eq. (2)
         # --> batch x queryL x sourceL

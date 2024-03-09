@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-
 from nltk.tokenize import RegexpTokenizer
 from collections import defaultdict
 from miscc.config import cfg
@@ -12,6 +11,10 @@ import torch
 import torch.utils.data as data
 from torch.autograd import Variable
 import torchvision.transforms as transforms
+
+import os
+import shutil
+from sklearn.model_selection import train_test_split
 
 import os
 import sys
@@ -80,7 +83,7 @@ def get_imgs(img_path, imsize, bbox=None,
         for i in range(cfg.TREE.BRANCH_NUM):
             # print(imsize[i])
             if i < (cfg.TREE.BRANCH_NUM - 1):
-                re_img = transforms.Scale(imsize[i])(img)
+                re_img = transforms.Resize(imsize[i])(img)
             else:
                 re_img = img
             ret.append(normalize(re_img))
@@ -133,7 +136,7 @@ class TextDataset(data.Dataset):
         #
         filename_bbox = {img_file[:-4]: [] for img_file in filenames}
         numImgs = len(filenames)
-        for i in xrange(0, numImgs):
+        for i in range(0, numImgs):
             # bbox = [x-left, y-top, width, height]
             bbox = df_bounding_boxes.iloc[i][1:].tolist()
 
@@ -142,12 +145,12 @@ class TextDataset(data.Dataset):
         #
         return filename_bbox
 
-    def load_captions(self, data_dir, filenames):
+    def load_captions(self, data_dir, filenames:list[str], split):
         all_captions = []
         for i in range(len(filenames)):
-            cap_path = '%s/text/%s.txt' % (data_dir, filenames[i])
+            cap_path = '%s/%s/text/%s.txt' % (data_dir, split, filenames[i])
             with open(cap_path, "r") as f:
-                captions = f.read().decode('utf8').split('\n')
+                captions = f.read().split('\n')
                 cnt = 0
                 for cap in captions:
                     if len(cap) == 0:
@@ -221,8 +224,8 @@ class TextDataset(data.Dataset):
         train_names = self.load_filenames(data_dir, 'train')
         test_names = self.load_filenames(data_dir, 'test')
         if not os.path.isfile(filepath):
-            train_captions = self.load_captions(data_dir, train_names)
-            test_captions = self.load_captions(data_dir, test_names)
+            train_captions = self.load_captions(data_dir, train_names, "train")
+            test_captions = self.load_captions(data_dir, test_names, "test")
 
             train_captions, test_captions, ixtoword, wordtoix, n_words = \
                 self.build_dictionary(train_captions, test_captions)
@@ -251,7 +254,7 @@ class TextDataset(data.Dataset):
     def load_class_id(self, data_dir, total_num):
         if os.path.isfile(data_dir + '/class_info.pickle'):
             with open(data_dir + '/class_info.pickle', 'rb') as f:
-                class_id = pickle.load(f)
+                class_id = pickle.load(f, encoding="bytes")
         else:
             class_id = np.arange(total_num)
         return class_id
@@ -262,13 +265,69 @@ class TextDataset(data.Dataset):
             with open(filepath, 'rb') as f:
                 filenames = pickle.load(f)
             print('Load filenames from: %s (%d)' % (filepath, len(filenames)))
+
+            return filenames
+
         else:
-            filenames = []
-        return filenames
+            image_dir = os.path.join(data_dir, 'images')
+            text_dir = os.path.join(data_dir, 'text')
+
+            image_files = sorted(os.listdir(image_dir))
+
+            filenames = [os.path.splitext(f)[0] for f in image_files]
+            
+            train_filenames, test_filenames = train_test_split(filenames, test_size=0.3)
+            
+            image_train = [f + '.jpg' for f in train_filenames]
+            text_train = [f + '.txt' for f in train_filenames]
+
+            image_test = [f + '.jpg' for f in test_filenames]
+            text_test = [f + '.txt' for f in test_filenames]
+
+            train_image_dir = os.path.join(data_dir, 'train/images')
+            test_image_dir = os.path.join(data_dir, 'test/images')
+            train_text_dir = os.path.join(data_dir, 'train/text')
+            test_text_dir = os.path.join(data_dir, 'test/text')
+
+            os.makedirs(train_image_dir, exist_ok=True)
+            os.makedirs(test_image_dir, exist_ok=True)
+            os.makedirs(train_text_dir, exist_ok=True)
+            os.makedirs(test_text_dir, exist_ok=True)
+
+            for file in image_train:
+                shutil.move(os.path.join(image_dir, file), train_image_dir)
+
+            for file in image_test:
+                shutil.move(os.path.join(image_dir, file), test_image_dir)
+
+            for file in text_train:
+                shutil.move(os.path.join(text_dir, file), train_text_dir)
+
+            for file in text_test:
+                shutil.move(os.path.join(text_dir, file), test_text_dir)
+
+            os.rmdir(image_dir)
+            os.rmdir(text_dir)
+
+            with open('%s/%s/filenames.pickle' % (data_dir, "train"), 'wb') as f:
+                pickle.dump(train_filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            with open('%s/%s/filenames.pickle' % (data_dir, "test"), 'wb') as f:
+                pickle.dump(test_filenames, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+            print('Create pickle and Load filenames from: %s (%d)' % (filepath, len(filenames)))
+
+            if split == 'train':
+                return train_filenames
+            else:
+                return test_filenames 
 
     def get_caption(self, sent_ix):
         # a list of indices for a sentence
-        sent_caption = np.asarray(self.captions[sent_ix]).astype('int64')
+        try:
+            sent_caption = np.asarray(self.captions[sent_ix]).astype('int64')
+        except:
+            print(f'Getting caption for sent_ix: {sent_ix}')
         if (sent_caption == 0).sum() > 0:
             print('ERROR: do not need END (0) token', sent_caption)
         num_words = len(sent_caption)
@@ -298,13 +357,24 @@ class TextDataset(data.Dataset):
             bbox = None
             data_dir = self.data_dir
         #
-        img_name = '%s/images/%s.jpg' % (data_dir, key)
+        img_name = ""
+        if os.path.isfile('%s/%s/images/%s.jpg' % (data_dir, "train", key)):
+            img_name = '%s/%s/images/%s.jpg' % (data_dir, "train", key)
+
+        if os.path.isfile('%s/%s/images/%s.jpg' % (data_dir, "test", key)):
+            img_name = '%s/%s/images/%s.jpg' % (data_dir, "test", key)
+
         imgs = get_imgs(img_name, self.imsize,
                         bbox, self.transform, normalize=self.norm)
         # random select a sentence
         sent_ix = random.randint(0, self.embeddings_num)
         new_sent_ix = index * self.embeddings_num + sent_ix
-        caps, cap_len = self.get_caption(new_sent_ix)
+        try:
+            caps, cap_len = self.get_caption(new_sent_ix)
+        except Exception as error:
+            print(error)
+            print(f'index: {index}, new_sent_ix: {new_sent_ix}, sent_ix: {sent_ix}, len(self.captions): {len(self.captions)}')
+            caps, cap_len = self.get_caption(new_sent_ix-1)
         return imgs, caps, cap_len, cls_id, key
 
 

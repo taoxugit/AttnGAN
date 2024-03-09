@@ -1,4 +1,4 @@
-# AttnGAN
+# AttnGAN (Python 3, Pytorch 1.0)
 
 Pytorch implementation for reproducing AttnGAN results in the paper [AttnGAN: Fine-Grained Text to Image Generation
 with Attentional Generative Adversarial Networks](http://openaccess.thecvf.com/content_cvpr_2018/papers/Xu_AttnGAN_Fine-Grained_Text_CVPR_2018_paper.pdf) by Tao Xu, Pengchuan Zhang, Qiuyuan Huang, Han Zhang, Zhe Gan, Xiaolei Huang, Xiaodong He. (This work was performed when Tao was an intern with Microsoft Research). 
@@ -7,9 +7,9 @@ with Attentional Generative Adversarial Networks](http://openaccess.thecvf.com/c
 
 
 ### Dependencies
-python 2.7
+python 3.6+
 
-Pytorch
+Pytorch 1.0+
 
 In addition, please add the project folder to PYTHONPATH and `pip install` the following packages:
 - `python-dateutil`
@@ -27,7 +27,10 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 2. Download the [birds](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) image data. Extract them to `data/birds/`
 3. Download [coco](http://cocodataset.org/#download) dataset and extract the images to `data/coco/`
 
-
+**Expected Dataset Folder Structure in YML**
+<div>- dataset</div>
+<div>|- images</div>
+<p>|- text</p>
 
 **Training**
 - Pre-train DAMSM models:
@@ -39,8 +42,6 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
   - For coco dataset: `python main.py --cfg cfg/coco_attn2.yml --gpu 3`
 
 - `*.yml` files are example configuration files for training/evaluation our models.
-
-
 
 **Pretrained Model**
 - [DAMSM for bird](https://drive.google.com/open?id=1GNUKjVeyWYBJ8hEU-yrfYQpDOkxEyP3V). Download and save it to `DAMSMencoders/`
