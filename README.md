@@ -27,7 +27,10 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
 2. Download the [birds](http://www.vision.caltech.edu/visipedia/CUB-200-2011.html) image data. Extract them to `data/birds/`
 3. Download [coco](http://cocodataset.org/#download) dataset and extract the images to `data/coco/`
 
-
+**Expected Dataset Folder Structure in YML**
+<div>- dataset</div>
+<div>|- images</div>
+<p>|- text</p>
 
 **Training**
 - Pre-train DAMSM models:
@@ -39,8 +42,6 @@ In addition, please add the project folder to PYTHONPATH and `pip install` the f
   - For coco dataset: `python main.py --cfg cfg/coco_attn2.yml --gpu 3`
 
 - `*.yml` files are example configuration files for training/evaluation our models.
-
-
 
 **Pretrained Model**
 - [DAMSM for bird](https://drive.google.com/open?id=1GNUKjVeyWYBJ8hEU-yrfYQpDOkxEyP3V). Download and save it to `DAMSMencoders/`
